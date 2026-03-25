@@ -19,7 +19,8 @@ TIMEZONE = os.getenv("TIMEZONE", "America/Caracas")
 def get_local_now() -> datetime:
 	try:
 		return datetime.now(ZoneInfo(TIMEZONE)).replace(tzinfo=None)
-	except Exception:
+	except Exception as e:
+		print(f"[ERROR ZONA HORARIA] Falló ZoneInfo con {TIMEZONE}: {e}. Retornando hora del servidor UTC.")
 		return datetime.now()
 
 BASE_DIR = Path(__file__).resolve().parent
