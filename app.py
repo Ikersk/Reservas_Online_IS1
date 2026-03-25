@@ -1,3 +1,11 @@
+import os
+try:
+    from zoneinfo import ZoneInfo  # Python 3.9+
+except ImportError:
+    from pytz import timezone as ZoneInfo  # Fallback para versiones viejas
+
+# Obtener zona horaria desde variable de entorno o usar America/Caracas por defecto
+TIMEZONE = os.getenv("TIMEZONE", "America/Caracas")
 from datetime import datetime, timedelta
 from hmac import compare_digest
 import re
@@ -82,7 +90,11 @@ limiter = Limiter(
 
 @app.context_processor
 def inject_globals():
-    return {"current_year": datetime.now().year}
+    try:
+        now_local = datetime.now(ZoneInfo(TIMEZONE))
+    except Exception:
+        now_local = datetime.utcnow()
+    return {"current_year": now_local.year}
 
 
 COLORES_EMPLEADOS = {
@@ -123,7 +135,12 @@ def _validar_fecha_agendamiento(date_str: str):
     except ValueError:
         return False, "Fecha inválida."
 
-    current_date = datetime.now().date()
+    try:
+        now_local = datetime.now(ZoneInfo(TIMEZONE))
+    except Exception:
+        now_local = datetime.utcnow()
+    current_date = now_local.date()
+
     if selected_date < current_date:
         return False, "No puedes agendar citas en fechas pasadas."
 
@@ -142,8 +159,12 @@ def _validar_fecha_pago_movil(payment_datetime: str):
     except ValueError:
         return False, "Fecha y hora de pago inválida."
 
-    now = datetime.now()
-    if selected_dt.year != now.year:
+    try:
+        now_local = datetime.now(ZoneInfo(TIMEZONE))
+    except Exception:
+        now_local = datetime.utcnow()
+
+    if selected_dt.year != now_local.year:
         return False, "La fecha y hora del pago debe estar dentro del año actual."
 
     return True, ""
