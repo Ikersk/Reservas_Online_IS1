@@ -1412,18 +1412,20 @@ def validate_client_for_rating(employee_id: int, client_email: str):
         return False, "Por favor indica tu correo electrónico.", None
 
     with get_session() as session:
-        client = session.execute(
-            select(Client).where(Client.email == normalized_email)
-        ).scalar_one_or_none()
+        # Avoid scalar_one_or_none since there can be multiple clients with same email
+        client_exists = session.execute(
+            select(Client.id).where(Client.email == normalized_email)
+        ).first()
 
-        if not client:
+        if not client_exists:
             return False, "No encontramos ningún cliente registrado con este correo.", None
 
-        # Busca una cita de este cliente con este empleado, que este completada y no este calificada aun
+        # Busca una cita de este cliente (por email) con este empleado, completada y sin calificar
         appointment = session.execute(
             select(Appointment)
+            .join(Client, Client.id == Appointment.client_id)
             .where(
-                Appointment.client_id == client.id,
+                Client.email == normalized_email,
                 Appointment.employee_id == employee_id,
                 Appointment.status == "completed",
                 Appointment.rating == None,

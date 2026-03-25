@@ -74,6 +74,7 @@ from servicio_recordatorios import start_scheduler
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
@@ -552,6 +553,7 @@ def admin_login():
             return render_template("admin_ingreso.html")
 
         if check_password_hash(ADMIN_PASSWORD_HASH, password):
+            session.permanent = True
             session["is_admin"] = True
             return redirect(url_for("admin_dashboard"))
 
