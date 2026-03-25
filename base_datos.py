@@ -28,6 +28,7 @@ from configuracion import (
     MAX_LONGITUD_COMENTARIO_CALIFICACION,
     MAX_PRECIO_SERVICIO_USD,
     BANCOS_VENEZOLANOS,
+    get_local_now,
 )
 
 SERVICE_CATALOG = {
@@ -684,7 +685,7 @@ def get_available_slots(date_str: str, employee_id: int, service_name: str):
         busy_end = busy_start + timedelta(minutes=busy_duration)
         busy_intervals.append((busy_start, busy_end))
 
-    now = datetime.now()
+    now = get_local_now()
     available = []
     for slot in all_slots:
         if slot <= now:
@@ -710,7 +711,7 @@ def create_appointment(client_name: str, client_email: str, service_name: str, e
     except ValueError:
         return False, "Fecha de cita inválida.", None
 
-    current_date = datetime.now().date()
+    current_date = get_local_now().date()
     if selected_date < current_date:
         return False, "No puedes agendar citas en fechas pasadas.", None
 
@@ -785,7 +786,7 @@ def create_appointment(client_name: str, client_email: str, service_name: str, e
                 appointment_datetime=slot_datetime,
                 status="pending_payment",
                 reminder_sent=0,
-                created_at=datetime.now().strftime(CREATED_AT_FORMAT),
+                created_at=get_local_now().strftime(CREATED_AT_FORMAT),
                 rating_token=uuid4().hex,
             )
             session.add(appointment)
@@ -845,7 +846,7 @@ def get_payment_remaining_seconds(appointment: dict, pending_minutes: int = PAYM
         return 0
 
     expires_at = created_at + timedelta(minutes=pending_minutes)
-    remaining = int((expires_at - datetime.now()).total_seconds())
+    remaining = int((expires_at - get_local_now()).total_seconds())
     return max(remaining, 0)
 
 
@@ -904,7 +905,7 @@ def get_appointments_for_admin(date_str: str | None = None, employee_id: int | N
 # Qué valida: estado `scheduled` y bandera `reminder_sent == 0`.
 # Qué retorna: lista de citas pendientes de recordatorio.
 def get_pending_reminders():
-    now = datetime.now()
+    now = get_local_now()
     next_24h = now + timedelta(hours=24)
     now_str = now.strftime(DATETIME_FORMAT)
     next_24h_str = next_24h.strftime(DATETIME_FORMAT)
@@ -956,7 +957,7 @@ def mark_reminder_sent(appointment_id: int):
 # Qué valida: estado `pending_payment` y fecha `created_at` parseable.
 # Qué retorna: cantidad de citas canceladas.
 def cancel_expired_pending_payments():
-    now = datetime.now()
+    now = get_local_now()
     canceled_count = 0
 
     with get_session() as session:
@@ -1104,7 +1105,7 @@ def submit_payment_proof(
     except ValueError:
         return False, "Fecha y hora de pago inválida."
 
-    now = datetime.now()
+    now = get_local_now()
     if parsed_payment_datetime.year != now.year:
         return False, "La fecha y hora del pago debe estar dentro del año actual."
 
@@ -1126,7 +1127,7 @@ def submit_payment_proof(
         if parsed_payment_datetime < (created_at - timedelta(minutes=5)):
             return False, "La fecha/hora del pago no puede ser previa a la creación de la cita."
 
-        if datetime.now() > expires_at:
+        if get_local_now() > expires_at:
             appointment.status = "canceled"
             session.commit()
             return False, "El tiempo para pagar expiró. Debes crear una nueva reserva."
@@ -1136,7 +1137,7 @@ def submit_payment_proof(
         appointment.payment_phone = normalized_phone
         appointment.payment_payer_id = normalized_payer_id
         appointment.payment_datetime = normalized_payment_datetime.replace("T", " ")
-        appointment.payment_submitted_at = datetime.now().strftime(CREATED_AT_FORMAT)
+        appointment.payment_submitted_at = get_local_now().strftime(CREATED_AT_FORMAT)
         session.commit()
 
     return True, "Comprobante recibido. Será validado por administración."

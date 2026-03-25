@@ -1,11 +1,4 @@
 import os
-try:
-    from zoneinfo import ZoneInfo  # Python 3.9+
-except ImportError:
-    from pytz import timezone as ZoneInfo  # Fallback para versiones viejas
-
-# Obtener zona horaria desde variable de entorno o usar America/Caracas por defecto
-TIMEZONE = os.getenv("TIMEZONE", "America/Caracas")
 from datetime import datetime, timedelta
 from hmac import compare_digest
 import re
@@ -29,6 +22,7 @@ from configuracion import (
     PAYMENT_PENDING_MINUTES,
     PAYMENT_PROOF_WINDOW_MINUTES,
     obtener_tasa_bcv_usd,
+    get_local_now,
     PATRON_EMAIL,
     PATRON_NOMBRE_EMPLEADO,
     PATRON_NOMBRE_SERVICIO,
@@ -90,10 +84,7 @@ limiter = Limiter(
 
 @app.context_processor
 def inject_globals():
-    try:
-        now_local = datetime.now(ZoneInfo(TIMEZONE))
-    except Exception:
-        now_local = datetime.utcnow()
+    now_local = get_local_now()
     return {"current_year": now_local.year}
 
 
@@ -135,10 +126,7 @@ def _validar_fecha_agendamiento(date_str: str):
     except ValueError:
         return False, "Fecha inválida."
 
-    try:
-        now_local = datetime.now(ZoneInfo(TIMEZONE))
-    except Exception:
-        now_local = datetime.utcnow()
+    now_local = get_local_now()
     current_date = now_local.date()
 
     if selected_date < current_date:
@@ -159,10 +147,7 @@ def _validar_fecha_pago_movil(payment_datetime: str):
     except ValueError:
         return False, "Fecha y hora de pago inválida."
 
-    try:
-        now_local = datetime.now(ZoneInfo(TIMEZONE))
-    except Exception:
-        now_local = datetime.utcnow()
+    now_local = get_local_now()
 
     if selected_dt.year != now_local.year:
         return False, "La fecha y hora del pago debe estar dentro del año actual."
@@ -629,7 +614,7 @@ def admin_dashboard():
         status=filter_status or None,
     )
     
-    today = datetime.now()
+    today = get_local_now()
     employee_ratings = get_employee_ratings_summary(today.year, today.month)
 
     return render_template(

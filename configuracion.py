@@ -6,8 +6,21 @@ import urllib.error
 from pathlib import Path
 import re
 from typing import Any
+from datetime import datetime
+try:
+	from zoneinfo import ZoneInfo
+except ImportError:
+	from pytz import timezone as ZoneInfo
 
 from dotenv import load_dotenv, dotenv_values
+
+TIMEZONE = os.getenv("TIMEZONE", "America/Caracas")
+
+def get_local_now() -> datetime:
+	try:
+		return datetime.now(ZoneInfo(TIMEZONE)).replace(tzinfo=None)
+	except Exception:
+		return datetime.now()
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env", override=True)
