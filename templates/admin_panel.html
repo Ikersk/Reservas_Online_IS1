@@ -1,0 +1,426 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard admin{% endblock %}
+
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <span class="section-badge">Administración</span>
+    <h2>Panel de citas</h2>
+    <p>Consulta el calendario y el listado detallado de reservas.</p>
+</section>
+
+<section class="card">
+    <div class="employee-manager">
+        <div class="employee-manager-header" style="text-align: center;">
+            <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem;">Gestión de empleados</h3>
+            <p style="font-size: 1rem;">Agrega, edita o elimina personal desde este panel.</p>
+        </div>
+
+        <form class="employee-create-form" action="{{ url_for('admin_add_employee') }}" method="post">
+            <label>
+                Nombre
+                <input type="text" name="employee_name" maxlength="16" pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:['’-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*(?: [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:['’-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*)?" title="Usa solo letras, máximo un espacio y caracteres comunes como apóstrofo o guion." required>
+            </label>
+            <label>
+                Área de Trabajo
+                <select name="work_area" onchange="if(this.value==='Otra'){this.nextElementSibling.style.display='block';this.nextElementSibling.required=true;this.removeAttribute('name');}else{this.nextElementSibling.style.display='none';this.nextElementSibling.required=false;this.setAttribute('name','work_area');}" required>
+                    <option value="General">General</option>
+                    {% for service in services %}
+                        <option value="{{ service.name }}">{{ service.name }}</option>
+                    {% endfor %}
+                </select>
+                <input type="text" name="work_area" placeholder="Especifique..." style="display:none; margin-top: 0.5rem;" maxlength="30">
+            </label>
+            <label>
+                Email
+                <input type="email" name="employee_email" maxlength="30" placeholder="opcional">
+            </label>
+            <button type="submit">Agregar empleado</button>
+        </form>
+
+        <form action="{{ url_for('admin_batch_edit_employees') }}" method="post" id="batch-edit-employees-form">
+            <div class="employee-list">
+                {% for employee in employees %}
+                <div class="employee-item">
+                    <div class="employee-edit-form">
+                        <input type="hidden" name="emp_id" value="{{ employee.id }}">
+                        <input type="text" name="employee_name_{{ employee.id }}" maxlength="16" pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:['’-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*(?: [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:['’-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*)?" title="Usa solo letras, máximo un espacio y caracteres comunes como apóstrofo o guion." value="{{ employee.name }}" required>
+                        
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <span class="work-area-emoji" style="font-size: 1.5rem; min-width: 2rem; text-align: center;">
+                                {% if employee.work_area == 'Corte de barba' %}🧔{% elif employee.work_area == 'Corte de cabello' %}✂️{% elif employee.work_area == 'Manicura' %}💅{% else %}👨‍✂️{% endif %}
+                            </span>
+                            <select name="work_area_{{ employee.id }}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 0.25rem; padding: 0.5rem;" onchange="let emoji = '👨‍✂️'; if(this.value==='Corte de barba') emoji='🧔'; else if(this.value==='Corte de cabello') emoji='✂️'; else if(this.value==='Manicura') emoji='💅'; this.previousElementSibling.textContent=emoji;" required>
+                                <option value="General" {% if employee.work_area == 'General' %}selected{% endif %}>General</option>
+                                {% for service in services %}
+                                    <option value="{{ service.name }}" {% if employee.work_area == service.name %}selected{% endif %}>{{ service.name }}</option>
+                                {% endfor %}
+                                {% set work_area_in_services = false %}
+                                {% for service in services %}
+                                    {% if employee.work_area == service.name %}
+                                        {% set work_area_in_services = true %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if not work_area_in_services and employee.work_area != 'General' %}
+                                    <option value="{{ employee.work_area }}" selected>{{ employee.work_area }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <input type="email" name="employee_email_{{ employee.id }}" maxlength="30" value="{{ employee.email or '' }}" placeholder="Email opcional">
+                        <button type="submit" formaction="{{ url_for('admin_delete_employee', employee_id=employee.id) }}" class="button-danger" style="margin-top: 0.5rem;" onclick="return confirm('¿Eliminar este empleado?');">Eliminar empleado</button>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-state-icon">👤</span>
+                    <p>No hay empleados registrados. Agrega uno arriba para empezar.</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if employees %}
+            <div style="margin-top: 1rem;">
+                <button type="submit" class="button-secondary" style="width: 100%;">Confirmar cambios de todos los empleados</button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="employee-manager">
+        <div class="employee-manager-header">
+            <h4>Gestión de servicios</h4>
+            <p>Agrega nuevos servicios para que aparezcan en el formulario de reserva.</p>
+        </div>
+
+        <form class="employee-create-form" action="{{ url_for('admin_add_service') }}" method="post">
+            <label>
+                Nombre
+                <input type="text" name="service_name" maxlength="30" pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9][A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9()&+.,' -]*" title="Usa letras, números y signos básicos: () & + . , ' -" required>
+            </label>
+            <label>
+                Duración (min)
+                <input type="number" name="service_duration" min="15" max="480" step="1" oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)" required>
+            </label>
+            <label>
+                Precio (USD)
+                <input type="number" name="service_price" min="0.01" max="1000" step="0.01" inputmode="decimal" oninput="const v=this.value.replace(',', '.').replace(/[^\d.]/g,''); const p=v.split('.'); const ent=(p[0]||'').slice(0,4); const dec=(p.slice(1).join('')||'').slice(0,2); this.value=p.length>1 ? `${ent}.${dec}` : ent;" required>
+            </label>
+            <button type="submit">Agregar servicio</button>
+        </form>
+
+        <div class="employee-list">
+            {% for service in services %}
+            <div class="employee-item">
+                <form action="{{ url_for('admin_edit_service', service_id=service.id) }}" method="post"
+                    class="service-edit-form">
+                    <input type="text" name="service_name" maxlength="30" pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9][A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9()&+.,' -]*" title="Usa letras, números y signos básicos: () & + . , ' -" value="{{ service.name }}" required>
+                    <input type="number" name="service_duration" min="15" max="480" step="1" oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)"
+                        value="{{ service.duration_minutes }}" required>
+                    <input type="number" name="service_price" min="0.01" step="0.01" inputmode="decimal" oninput="const v=this.value.replace(',', '.').replace(/[^\d.]/g,''); const p=v.split('.'); const ent=(p[0]||'').slice(0,4); const dec=(p.slice(1).join('')||'').slice(0,2); this.value=p.length>1 ? `${ent}.${dec}` : ent;"
+                        max="1000"
+                        value="{{ '%.2f'|format(service.price_usd) }}" required>
+                    <button type="submit" class="button-secondary">Guardar cambios</button>
+                </form>
+                <form action="{{ url_for('admin_delete_service', service_id=service.id) }}" method="post"
+                    class="employee-delete-form" onsubmit="return confirm('¿Eliminar este servicio?');">
+                    <button type="submit" class="button-danger">Eliminar</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <span class="empty-state-icon">✂️</span>
+                <p>No hay servicios registrados. Crea uno arriba para que aparezca en las reservas.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="metrics-grid">
+        <article class="metric-card">
+            <h4>Total citas</h4>
+            <p>{{ metrics.total_appointments }}</p>
+        </article>
+        <article class="metric-card">
+            <h4>Servicio más pedido</h4>
+            <p>{{ metrics.most_requested_service }} ({{ metrics.most_requested_count }})</p>
+        </article>
+        <article class="metric-card">
+            <h4>Empleado más solicitado</h4>
+            <p>{{ metrics.top_employee }} ({{ metrics.top_employee_count }})</p>
+        </article>
+        <article class="metric-card">
+            <h4>Estados</h4>
+            <p>P: {{ metrics.status_counts.pending_payment }} | A: {{ metrics.status_counts.scheduled }} | At: {{
+                metrics.status_counts.completed }} | C: {{ metrics.status_counts.canceled }}</p>
+        </article>
+        
+        <article class="metric-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+            <h4 style="margin-bottom: 1rem; font-size: 1.1rem; font-weight: 500;">Empleado del Mes</h4>
+            {% if employee_ratings %}
+                {% set best = employee_ratings[0] %}
+                <div style="font-size: 3.5rem; margin-bottom: 0.5rem; line-height: 1;">
+                    {% if best.work_area == 'Corte de barba' %}🧔{% elif best.work_area == 'Corte de cabello' %}✂️{% elif best.work_area == 'Manicura' %}💅{% else %}👨‍✂️{% endif %}
+                </div>
+                <div style="font-size: 1.6rem; font-weight: bold; margin: 0; line-height: 1.2;">{{ best.name }}</div>
+                <small style="font-size: 0.9rem; color: var(--text-soft); display: block; margin-top: 0.2rem;">{{ best.work_area }}</small>
+            {% else %}
+                <p style="font-size: 1.1rem; color: var(--text-soft);">Sin datos este mes.</p>
+            {% endif %}
+        </article>
+    </div>
+
+    {% if employee_ratings %}
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="section-heading compact">
+            <h3>Ranking de Empleados (Este Mes)</h3>
+            <p>Calificaciones basadas en el feedback de los clientes.</p>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Puesto</th>
+                        <th>Empleado</th>
+                        <th style="text-align: center;">Calificación</th>
+                        <th style="text-align: center;">Total Reseñas</th>
+                        <th>Comentarios Recientes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employee_ratings %}
+                    <tr>
+                        <td style="font-weight: bold; width: 60px;">#{{ loop.index }}</td>
+                        <td>{{ emp.name }}</td>
+                        <td style="text-align: center; color: var(--primary-color); font-weight: bold;">{{ emp.average }} / 5.0</td>
+                        <td style="text-align: center;">{{ emp.total_ratings }}</td>
+                        <td style="font-size: 0.85rem; max-width: 250px;">
+                            {% for c in emp.comments[:2] %}
+                                <div style="margin-bottom: 0.25rem; border-left: 2px solid var(--primary-color); padding-left: 0.5rem;">
+                                    "{{ c.comment }}" <span style="color:#f59e0b;">★{{ c.rating }}</span>
+                                </div>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="mini-table-card">
+        <h4>Citas por día</h4>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <canvas id="appointmentsByDayChart" aria-label="Gráfico de citas por día"></canvas>
+            </div>
+            <div class="chart-card chart-card-small">
+                <canvas id="appointmentsStatusChart" aria-label="Gráfico de estado de citas"></canvas>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in metrics.appointments_by_day %}
+                    <tr>
+                        <td>{{ row.date }}</td>
+                        <td>{{ row.count }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                    <td colspan="2">
+                        <div class="empty-state">
+                            <span class="empty-state-icon">📊</span>
+                            <p>Sin datos de citas por día para mostrar.</p>
+                        </div>
+                    </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="calendar-card">
+        <h3>Calendario de citas</h3>
+        <div class="calendar-legend" aria-label="Leyenda de colores por empleado">
+            {% for item in leyenda_colores %}
+            <div class="calendar-legend-item">
+                <span class="calendar-legend-dot" style="background-color: {{ item['color'] }};"></span>
+                <span>{{ item['nombre'] }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div id="admin-calendar" data-events-url="{{ url_for('admin_appointments_api') }}"></div>
+    </div>
+
+    <h3 class="table-title">Listado detallado</h3>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1rem;">
+        <form action="{{ url_for('admin_cleanup_canceled_appointments') }}" method="post"
+            onsubmit="return confirm('¿Seguro que deseas eliminar todas las citas canceladas? Esta acción no se puede deshacer.');"
+            style="margin: 0;">
+            <input type="hidden" name="filter_date" value="{{ filters.date }}">
+            <input type="hidden" name="filter_employee_id" value="{{ filters.employee_id }}">
+            <input type="hidden" name="filter_status" value="{{ filters.status }}">
+            <button type="submit" class="button-danger">Limpiar canceladas</button>
+        </form>
+
+        <form action="{{ url_for('admin_cleanup_completed_appointments') }}" method="post"
+            onsubmit="return confirm('¿Seguro que deseas eliminar todas las citas atendidas? Esta acción no se puede deshacer.');"
+            style="margin: 0;">
+            <input type="hidden" name="filter_date" value="{{ filters.date }}">
+            <input type="hidden" name="filter_employee_id" value="{{ filters.employee_id }}">
+            <input type="hidden" name="filter_status" value="{{ filters.status }}">
+            <button type="submit" class="button-secondary">Limpiar atendidas</button>
+        </form>
+    </div>
+
+    <form class="filters-grid" action="{{ url_for('admin_dashboard') }}" method="get">
+        <label>
+            Fecha
+            <input type="date" name="date" value="{{ filters.date }}">
+        </label>
+        <label>
+            Empleado
+            <select name="employee_id">
+                <option value="">Todos</option>
+                {% for employee in employees %}
+                <option value="{{ employee.id }}" {% if filters.employee_id==employee.id|string %}selected{% endif %}>{{
+                    employee.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Estado
+            <select name="status">
+                <option value="">Todos</option>
+                <option value="pending_payment" {% if filters.status=='pending_payment' %}selected{% endif %}>Pendiente
+                    pago</option>
+                <option value="scheduled" {% if filters.status=='scheduled' %}selected{% endif %}>Agendada</option>
+                <option value="completed" {% if filters.status=='completed' %}selected{% endif %}>Atendida</option>
+                <option value="canceled" {% if filters.status=='canceled' %}selected{% endif %}>Cancelada</option>
+            </select>
+        </label>
+        <button type="submit">Filtrar</button>
+        <button type="button" class="button-secondary" onclick="exportCsv()">Exportar CSV</button>
+    </form>
+    <script>
+    function exportCsv() {
+        const form = document.querySelector('.filters-grid');
+        const url = new URL("{{ url_for('admin_export_csv') }}", window.location.origin);
+        url.searchParams.append('date', form.date.value);
+        url.searchParams.append('employee_id', form.employee_id.value);
+        url.searchParams.append('status', form.status.value);
+        window.location.href = url.toString();
+    }
+    </script>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha y hora</th>
+                    <th>Cliente</th>
+                    <th>Email</th>
+                    <th>Servicio</th>
+                    <th>Empleado</th>
+                    <th>Estado</th>
+                    <th>Pago</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in appointments %}
+                <tr>
+                    <td>{{ item.appointment_datetime }}</td>
+                    <td>{{ item.client_name }}</td>
+                    <td>{{ item.client_email }}</td>
+                    <td>{{ item.service_name }} ({{ item.service_duration }} min)</td>
+                    <td>{{ item.employee_name }}</td>
+                    <td>
+                        <span class="status-badge {{ item.status }}">
+                            {% if item.status == 'pending_payment' %}
+                            Pendiente pago
+                            {% elif item.status == 'scheduled' %}
+                            Agendada
+                            {% elif item.status == 'completed' %}
+                            Atendida
+                            {% elif item.status == 'canceled' %}
+                            Cancelada
+                            {% else %}
+                            {{ item.status }}
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% if item.payment_last4 %}
+                        <div class="payment-proof">
+                            <small>Ref: ****{{ item.payment_last4 }}</small>
+                            <small>{{ item.payment_bank }} | {{ item.payment_phone }}</small>
+                            <small>{{ item.payment_payer_id }} | {{ item.payment_datetime }}</small>
+                        </div>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.status == 'scheduled' %}
+                        <form action="{{ url_for('admin_update_appointment_status', appointment_id=item.id) }}"
+                            method="post" class="inline-actions">
+                            <input type="hidden" name="filter_date" value="{{ filters.date }}">
+                            <input type="hidden" name="filter_employee_id" value="{{ filters.employee_id }}">
+                            <input type="hidden" name="filter_status" value="{{ filters.status }}">
+                            <button type="submit" name="status" value="completed"
+                                class="button-secondary">Atendida</button>
+                            <button type="submit" name="status" value="canceled" class="button-danger">Cancelar</button>
+                        </form>
+                        {% elif item.status == 'pending_payment' %}
+                        <form action="{{ url_for('admin_review_payment', appointment_id=item.id) }}" method="post"
+                            class="inline-actions">
+                            <input type="hidden" name="filter_date" value="{{ filters.date }}">
+                            <input type="hidden" name="filter_employee_id" value="{{ filters.employee_id }}">
+                            <input type="hidden" name="filter_status" value="{{ filters.status }}">
+                            <button type="submit" name="decision" value="approve" class="button-secondary">Aprobar
+                                pago</button>
+                            <button type="submit" name="decision" value="reject" class="button-danger">Rechazar
+                                pago</button>
+                        </form>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                <td colspan="8">
+                    <div class="empty-state">
+                        <span class="empty-state-icon">📋</span>
+                        <p>No hay citas registradas para los filtros seleccionados.</p>
+                    </div>
+                </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script id="appointments-by-day-data" type="application/json">{{ metrics.appointments_by_day | tojson }}</script>
+<script id="appointments-status-data" type="application/json">{{ metrics.status_counts | tojson }}</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+{% endblock %}

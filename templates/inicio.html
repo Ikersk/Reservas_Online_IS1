@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}Reservar cita{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h2>Reserva tu cita en segundos</h2>
+    <p>Elige servicio, profesional, fecha y horario disponible en tiempo real.</p>
+</section>
+
+<section class="card" style="margin-bottom: 2rem;">
+    <div class="section-heading compact">
+        <h3>Conoce a nuestro equipo</h3>
+    </div>
+
+    <div class="team-grid" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem;">
+        {% for emp in employee_ratings %}
+        <article class="info-card employee-rating-clickable" data-employee-id="{{ emp.id }}"
+            style="cursor: pointer; text-align: center; transition: transform 0.2s; min-width: 200px; max-width: 250px; flex: 1 1 200px;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">
+                {% if emp.work_area == 'Corte de barba' %}
+                🧔
+                {% elif emp.work_area == 'Corte de cabello' %}
+                ✂️
+                {% elif emp.work_area == 'Manicura' %}
+                💅
+                {% else %}
+                👨‍✂️
+                {% endif %}
+            </div>
+            <h4 style="margin: 0; font-size: 1.25rem;">{{ emp.name }} <small
+                    style="font-size: 0.8rem; color: var(--text-soft); display: block; margin-top: 0.2rem;">{{ emp.work_area
+                    }}</small></h4>
+            {% if emp.total_ratings > 0 %}
+            <div style="margin-top: 0.5rem; font-size: 0.95rem; font-weight: 600; color: #f59e0b;">
+                ⭐ {{ '%.1f'|format(emp.average) }} <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-soft);">({{ emp.total_ratings }} u.)</span>
+            </div>
+            {% else %}
+            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-soft);">
+                Nuevo en el equipo
+            </div>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Email Verification Modal placeholder moved to end -->
+
+<section class="card prices-card">
+    <div class="section-heading compact">
+        <h3>Precios actuales</h3>
+
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Servicio</th>
+                    <th>Duración</th>
+                    <th>Precio (USD)</th>
+                    <th>Precio (Bs - Tasa Oficial)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in price_board %}
+                <tr>
+                    <td>{{ item.service_name }}</td>
+                    <td>{{ item.duration }} min</td>
+                    <td>${{ '%.2f'|format(item.price_usd) }}</td>
+                    <td>Bs {{ '%.2f'|format(item.price_bcv) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card">
+    <div class="section-heading">
+        <h3>Formulario de reserva</h3>
+
+    </div>
+
+    <form action="{{ url_for('book') }}" method="post" id="booking-form">
+        <div class="form-grid">
+            <label>
+                Nombre del cliente
+                <input type="text" name="client_name" maxlength="16"
+                    pattern="[A-Za-zÀ-ɏ]+(?:[' \-][A-Za-zÀ-ɏ]+)*(?: [A-Za-zÀ-ɏ]+(?:[' \-][A-Za-zÀ-ɏ]+)*)?"
+                    title="Usa solo letras, máximo un espacio y caracteres comunes como apóstrofo o guion." required>
+            </label>
+
+            <label>
+                Email del cliente
+                <input type="email" name="client_email" maxlength="28" required>
+            </label>
+
+            <label>
+                Servicio
+                <select name="service_name" id="service_name" required>
+                    <option value="">Selecciona...</option>
+                    {% for item in price_board %}
+                    <option value="{{ item.service_name }}" title="Duración: {{ item.duration }} min | Precio: ${{ '%.2f'|format(item.price_usd) }}">{{ item.service_name }} — ${{ '%.2f'|format(item.price_usd) }} ({{ item.duration }} min)</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                Empleado
+                <select name="employee_id" id="employee_id" required>
+                    <option value="">Selecciona...</option>
+                    {% for employee in employees %}
+                    <option value="{{ employee.id }}" data-work-area="{{ employee.work_area }}">{{ employee.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                Fecha
+                <input type="text" name="date" id="date" placeholder="Selecciona..." required>
+            </label>
+
+            <label>
+                Horario disponible
+                <select name="time" id="time" required>
+                    <option value="">Primero selecciona empleado y fecha</option>
+                </select>
+            </label>
+        </div>
+
+        <button type="button" id="preview-booking-btn">Confirmar reserva</button>
+
+        <!-- Preview Modal placeholder moved to end -->
+    </form>
+</section>
+
+<section class="info-grid">
+    <article class="info-card">
+        <h4>Disponibilidad actualizada</h4>
+        <p>Los horarios se refrescan automáticamente para evitar choques de reservas.</p>
+    </article>
+    <article class="info-card">
+        <h4>Atención personalizada</h4>
+        <p>Puedes seleccionar al empleado con quien prefieres atenderte.</p>
+    </article>
+    <article class="info-card">
+        <h4>Recordatorio por correo</h4>
+        <p>Recibirás un email antes de la cita.</p>
+    </article>
+</section>
+
+<!-- Modales movidos aquí para escapar de contextos aislados -->
+<div id="verify-email-modal"
+    style="display: none; position: fixed; inset: 0; background: rgba(var(--tint-color), 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 3000; justify-content: center; align-items: center;">
+    <div class="card" style="width: 90%; max-width: 400px; margin: 0; position: relative;">
+        <button id="close-modal-btn"
+            style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-soft);">&times;</button>
+        <div class="section-heading compact">
+            <h3>Verifica tu identidad</h3>
+            <p>Ingresa el correo electrónico que usaste para agendar tu cita.</p>
+        </div>
+        <form id="verify-email-form">
+            <input type="hidden" id="verify-employee-id" name="employee_id">
+            <label style="display: block; width: 100%;">
+                <input type="email" id="verify-client-email" required placeholder="tu-correo@ejemplo.com"
+                    style="width: 100%; margin-bottom: 1rem;">
+            </label>
+            <button type="submit" style="width: 100%;">Verificar y Calificar</button>
+        </form>
+    </div>
+</div>
+
+<div id="booking-preview-modal" style="display: none; position: fixed; inset: 0; background: rgba(var(--tint-color), 0.5); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 3000; justify-content: center; align-items: center;">
+    <div class="card" style="width: 90%; max-width: 450px; margin: 0; padding: 2rem;">
+        <div class="section-heading compact">
+            <h3>Revisa tu cita</h3>
+            <p>Por favor, confirma los datos antes de continuar.</p>
+        </div>
+        <div style="background: rgba(var(--tint-color), 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--line-soft);">
+            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+                <li><strong>Cliente:</strong> <span id="preview-client-name"></span></li>
+                <li><strong>Servicio:</strong> <span id="preview-service-name"></span></li>
+                <li><strong>Barbero:</strong> <span id="preview-employee-name"></span></li>
+                <li><strong>Fecha:</strong> <span id="preview-date"></span></li>
+                <li><strong>Hora:</strong> <span id="preview-time"></span></li>
+            </ul>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <button type="button" id="cancel-preview-btn" style="flex: 1; background: transparent; border: 1px solid var(--line-soft); color: var(--text-main);">Corregir</button>
+            <button type="submit" id="submit-booking-btn" style="flex: 1;">Aceptar y agendar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const modal = document.getElementById("verify-email-modal");
+        const closeBtn = document.getElementById("close-modal-btn");
+        const verifyForm = document.getElementById("verify-email-form");
+        const empIdInput = document.getElementById("verify-employee-id");
+        const emailInput = document.getElementById("verify-client-email");
+
+        document.querySelectorAll(".employee-rating-clickable").forEach(card => {
+            card.addEventListener("click", () => {
+                empIdInput.value = card.dataset.employeeId;
+                emailInput.value = "";
+                modal.style.display = "flex";
+            });
+
+            
+            card.addEventListener("mouseenter", () => card.style.transform = "translateY(-5px)");
+            card.addEventListener("mouseleave", () => card.style.transform = "translateY(0)");
+        });
+
+        const serviceSelect = document.getElementById("service_name");
+        const employeeSelect = document.getElementById("employee_id");
+        const allEmployeeOptions = Array.from(employeeSelect.options).slice(1);
+
+        serviceSelect.addEventListener("change", (e) => {
+            const selectedService = e.target.value;
+            let foundValidEmployee = false;
+
+            allEmployeeOptions.forEach(opt => {
+                const area = opt.getAttribute("data-work-area");
+                if (!selectedService || area === "General" || area === selectedService || area === "Otra") {
+                    opt.hidden = false;
+                    opt.disabled = false;
+                } else {
+                    opt.hidden = true;
+                    opt.disabled = true;
+                    if (opt.selected) opt.selected = false;
+                }
+                if (!opt.disabled && opt.selected) {
+                    foundValidEmployee = true;
+                }
+            });
+
+            if (!foundValidEmployee) {
+                employeeSelect.value = "";
+            }
+        });
+
+        closeBtn.addEventListener("click", () => modal.style.display = "none");
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) modal.style.display = "none";
+        });
+
+        verifyForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const btn = verifyForm.querySelector("button");
+            const originalText = btn.textContent;
+            btn.textContent = "Verificando...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch("/api/verify-rating-eligibility", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        employee_id: empIdInput.value,
+                        client_email: emailInput.value
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    window.location.href = data.url;
+                } else {
+                    alert(data.error || "Ocurrió un error al verificar.");
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                alert("Error de conexión. Inténtalo de nuevo.");
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        // Booking preview modal logic
+        const bookingForm = document.getElementById("booking-form");
+        const previewBtn = document.getElementById("preview-booking-btn");
+        const previewModal = document.getElementById("booking-preview-modal");
+        
+        previewBtn.addEventListener("click", () => {
+            if (!bookingForm.checkValidity()) {
+                bookingForm.reportValidity();
+                return;
+            }
+
+            const timeSelectLocal = document.getElementById("time");
+            // Make sure a time slot is selected (sometimes availability goes away)
+            if (!timeSelectLocal.value) {
+                alert("Por favor selecciona un horario disponible.");
+                return;
+            }
+
+            document.getElementById("preview-client-name").textContent = bookingForm.client_name.value;
+            const sSelect = bookingForm.service_name;
+            document.getElementById("preview-service-name").textContent = sSelect.options[sSelect.selectedIndex].text;
+            const eSelect = bookingForm.employee_id;
+            document.getElementById("preview-employee-name").textContent = eSelect.options[eSelect.selectedIndex].text;
+            document.getElementById("preview-date").textContent = bookingForm.date.value;
+            document.getElementById("preview-time").textContent = timeSelectLocal.value;
+
+            previewModal.style.display = "flex";
+        });
+
+        document.getElementById("cancel-preview-btn").addEventListener("click", () => {
+            previewModal.style.display = "none";
+        });
+
+        document.getElementById("submit-booking-btn").addEventListener("click", () => {
+            previewModal.style.display = "none";
+            bookingForm.submit();
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Ingreso admin{% endblock %}
+
+{% block content %}
+<section class="login-wrapper">
+    <div class="card small login-card">
+        <span class="login-badge">Acceso interno</span>
+        <h2>Panel de administración</h2>
+        <p>Ingresa tu clave para ver y gestionar las citas agendadas.</p>
+
+        <form action="{{ url_for('admin_login') }}" method="post" class="login-form">
+            <label>
+                Clave de acceso
+                <input type="password" name="password" maxlength="20" placeholder="••••••••"
+                    autocomplete="current-password" required>
+            </label>
+
+            <button type="submit" class="login-button">Ingresar al panel</button>
+        </form>
+
+        <p class="login-help">Solo personal autorizado.</p>
+    </div>
+</section>
+{% endblock %}

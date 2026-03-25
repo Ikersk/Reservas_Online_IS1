@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de reservas y gestión de citas para barbería. Agenda tu cita en segundos, elige servicio, profesional y horario disponible en tiempo real.">
+    <meta name="author" content="Equipo de Desarrollo">
+    <meta property="og:title" content="Barbería — Reserva tu Cita">
+    <meta property="og:description" content="Agenda citas en tiempo real, paga con pago móvil y califica a tu barbero favorito.">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💈%3C/text%3E%3C/svg%3E">
+    <title>{% block title %}Barbería{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body
+    class="{% if request.path.startswith('/admin') %}page-admin{% elif request.path.startswith('/payment') %}page-payment{% else %}page-home{% endif %}">
+    
+    <div class="barber-doodles"></div>
+    <header class="site-header">
+        <div class="brand-block" style="position: relative; display: inline-block;">
+            <button id="brand-menu-btn" class="glass-circle-btn"
+                style="border: none; font-size: 1.35rem; font-weight: bold; padding: 12px 24px; display: flex; align-items: center; gap: 0.4rem;">Barbería
+                <span style="font-size: 0.7em; margin-top:0.2em; opacity: 0.7;">▾</span></button>
+            <div id="brand-dropdown"
+                style="display: none; position: absolute; top: calc(100% + 0.8rem); left: 0; background: var(--glass-bg, rgba(255,255,255,0.8)); backdrop-filter: var(--glass-filter, blur(20px)); -webkit-backdrop-filter: var(--glass-filter, blur(20px)); box-shadow: var(--glass-inset), 0 10px 25px rgba(0,0,0,0.15); border-radius: 20px; overflow: hidden; z-index: 50; min-width: 220px; border: var(--glass-border);">
+                {% if session.get('is_admin') %}
+                <a href="{{ url_for('admin_dashboard') }}"
+                    style="display: block; padding: 1rem 1.25rem; color: var(--text-main, #1e293b); text-decoration: none; border-bottom: 1px solid var(--line-soft, #e2e8f0); font-weight: 600;">Administración</a>
+                <a href="{{ url_for('admin_logout') }}"
+                    style="display: block; padding: 1rem 1.25rem; color: #ef4444; text-decoration: none; font-weight: 600;">Cerrar
+                    sesión</a>
+                {% else %}
+                <a href="{{ url_for('admin_login') }}"
+                    style="display: block; padding: 1rem 1.25rem; color: var(--text-main, #1e293b); text-decoration: none; font-weight: 600;">Administración</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="header-actions">
+            <nav>
+                <a href="{{ url_for('home') }}"
+                    class="nav-link {% if request.path == '/' %}active{% endif %}">Reservas</a>
+            </nav>
+            <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Cambiar tema" title="Modo oscuro"
+                style="font-size: 1.2rem; padding: 0; border: none;">🌙</button>
+        </div>
+    </header>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="alerts">
+            {% for category, message in messages %}
+            <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <span class="footer-logo">💈</span>
+                <span class="footer-name">Barbería</span>
+            </div>
+            <div class="footer-info">
+                <p>🕐 Horario: Lun – Sáb, 9:00 AM – 7:00 PM</p>
+            </div>
+            <div class="footer-links">
+                <a href="{{ url_for('home') }}">Reservas</a>
+                <span class="footer-divider">•</span>
+                <a href="{{ url_for('admin_login') }}">Administración</a>
+            </div>
+            <p class="footer-copy">© {{ current_year }} Barbería — Sistema de Reservas y Gestión Operativa</p>
+        </div>
+    </footer>
+
+    {% block extra_scripts %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        document.addEventListener('click', (e) => {
+            const btn = document.getElementById('brand-menu-btn');
+            const drop = document.getElementById('brand-dropdown');
+            if (btn && drop) {
+                if (btn.contains(e.target)) {
+                    drop.style.display = drop.style.display === 'none' ? 'block' : 'none';
+                } else if (!drop.contains(e.target)) {
+                    drop.style.display = 'none';
+                }
+            }
+        });
+
+        // Auto-dismiss flash alerts after 5 seconds
+        document.querySelectorAll('.alert').forEach((alert) => {
+            setTimeout(() => {
+                alert.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-10px)';
+                setTimeout(() => alert.remove(), 500);
+            }, 5000);
+        });
+    </script>
+    <svg style="display: none">
+        <filter id="glass-distortion" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox">
+            <feTurbulence type="fractalNoise" baseFrequency="0.003 0.003" numOctaves="1" seed="5" result="turbulence" />
+            <feComponentTransfer in="turbulence" result="mapped">
+                <feFuncR type="gamma" amplitude="1" exponent="10" offset="0.5" />
+                <feFuncG type="gamma" amplitude="0" exponent="1" offset="0" />
+                <feFuncB type="gamma" amplitude="0" exponent="1" offset="0.5" />
+            </feComponentTransfer>
+            <feGaussianBlur in="turbulence" stdDeviation="3" result="softMap" />
+            <feSpecularLighting in="softMap" surfaceScale="5" specularConstant="1" specularExponent="100"
+                lighting-color="white" result="specLight">
+                <fePointLight x="-200" y="-200" z="300" />
+            </feSpecularLighting>
+            <feComposite in="specLight" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="litImage" />
+            <feDisplacementMap in="SourceGraphic" in2="softMap" scale="50" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
+</body>
+
+</html>

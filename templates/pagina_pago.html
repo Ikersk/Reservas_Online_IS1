@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar pago{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <span class="section-badge">Pago móvil</span>
+    <h2>Completa el pago para confirmar tu cita</h2>
+    
+</section>
+
+<section class="card">
+    <div class="section-heading compact">
+        <h3>Datos para realizar el pago</h3>
+        
+    </div>
+
+    <div class="payment-timer-card" id="payment-timer" data-remaining-seconds="{{ payment_remaining_seconds }}" data-expired-redirect-url="{{ url_for('payment_page', appointment_id=appointment.id) }}">
+        <h4>Tiempo restante para completar el pago</h4>
+        <p class="payment-timer-value" id="payment-countdown">--:--</p>
+        <small>Dispones de {{ payment_pending_minutes }} minutos desde la creación de la reserva. Si el tiempo termina, la cita se libera automáticamente y deberás reservar de nuevo.</small>
+    </div>
+
+    <div class="info-grid">
+        <article class="info-card" style="cursor: pointer;" onclick="copyToClipboard(this.querySelector('span.copy-badge'), '{{ payment_receiver.bank }}')">
+            <h4>Banco receptor <span class="copy-badge" style="float: right; font-size: 0.85rem;" title="Copiar">📋</span></h4>
+            <p>{{ payment_receiver.bank }}</p>
+        </article>
+        <article class="info-card" style="cursor: pointer;" onclick="copyToClipboard(this.querySelector('span.copy-badge'), '{{ payment_receiver.phone }}')">
+            <h4>Teléfono receptor <span class="copy-badge" style="float: right; font-size: 0.85rem;" title="Copiar">📋</span></h4>
+            <p>{{ payment_receiver.phone }}</p>
+        </article>
+        <article class="info-card" style="cursor: pointer;" onclick="copyToClipboard(this.querySelector('span.copy-badge'), '{{ payment_receiver.id }}')">
+            <h4>Cédula / RIF <span class="copy-badge" style="float: right; font-size: 0.85rem;" title="Copiar">📋</span></h4>
+            <p>{{ payment_receiver.id }}</p>
+        </article>
+        <article class="info-card">
+            <h4>Titular</h4>
+            <p>{{ payment_receiver.name }}</p>
+        </article>
+        <article class="info-card">
+            <h4>Referencia sugerida</h4>
+            <p>{{ payment_receiver.reference }}</p>
+        </article>
+        <article class="info-card payment-amount-card">
+            <h4>Monto a transferir</h4>
+            <p class="amount-usd">USD ${{ '%.2f'|format(payment_amount_usd) }}</p>
+            <p class="amount-bcv">Bs {{ '%.2f'|format(payment_amount_bcv) }}</p>
+            <small>Tasa Oficial BCV aplicada: Bs {{ '%.2f'|format(bcv_usd_rate) }} por $1</small>
+        </article>
+        <article class="info-card">
+            <h4>Cita</h4>
+            <p>{{ appointment.service_name }} con {{ appointment.employee_name }} - {{ appointment.appointment_datetime }}</p>
+        </article>
+    </div>
+
+    <div class="section-heading compact section-heading-spaced">
+        <h3>Registrar comprobante</h3>
+        
+    </div>
+
+    <form action="{{ url_for('payment_submit', appointment_id=appointment.id) }}" method="post" class="form-grid" id="payment-proof-form">
+        <label>
+            Últimos 4 dígitos
+            <input type="text" name="payment_last4" minlength="4" maxlength="4" pattern="\d{4}" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4);" required>
+        </label>
+
+        <label>
+            Banco emisor
+            <select name="payment_bank" required>
+                <option value="">Selecciona un banco...</option>
+                {% for bank in bancos_venezolanos %}
+                    <option value="{{ bank }}">{{ bancos_venezolanos_codigos[bank] }} - {{ bank }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>
+            Teléfono emisor
+            <div style="display: flex; gap: 0.5rem; width: 100%;">
+                <select name="payment_phone_prefix" required style="flex: 0 0 35%; min-width: 0; padding-left: 0.5rem; padding-right: 0.5rem;">
+                    <option value="">Prefijo</option>
+                    <option value="0414">0414</option>
+                    <option value="0424">0424</option>
+                    <option value="0412">0412</option>
+                    <option value="0422">0422</option>
+                    <option value="0416">0416</option>
+                    <option value="0426">0426</option>
+                </select>
+                <input type="text" name="payment_phone_digits" maxlength="7" minlength="7" inputmode="numeric" pattern="\d{7}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,7);" placeholder="1234567" title="Ingresa 7 dígitos numéricos" required style="flex: 1; min-width: 0;">
+            </div>
+        </label>
+
+        <label>
+            Cédula emisor
+            <div style="display: flex; gap: 0.5rem; width: 100%;">
+                <select name="payment_payer_id_prefix" required style="flex: 0 0 25%; min-width: 0; padding-left: 0.5rem; padding-right: 0.5rem;">
+                    <option value="V">V</option>
+                    <option value="E">E</option>
+                </select>
+                <input type="text" name="payment_payer_id_digits" maxlength="8" pattern="\d{1,8}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,8);" placeholder="12345678" title="Ingresa hasta 8 dígitos numéricos" required style="flex: 1; min-width: 0;">
+            </div>
+        </label>
+
+        <label>
+            Fecha y hora de la transferencia
+            <div style="display: flex; gap: 0.5rem; width: 100%;">
+                <input type="text" name="payment_date" id="payment_date" placeholder="AÑO-MES-DÍA" min="{{ payment_datetime_min[:10] }}" max="{{ payment_datetime_max[:10] }}" required style="flex: 1; min-width: 0; cursor: pointer;">
+                <input type="text" name="payment_time" id="payment_time" placeholder="HH:MM" required style="flex: 1; min-width: 0; cursor: pointer;">
+            </div>
+        </label>
+
+        <div class="payment-submit-wrapper">
+            <button type="submit" id="payment-submit-button">Enviar comprobante</button>
+        </div>
+    </form>
+</section>
+{% endblock %}
