@@ -7,63 +7,79 @@
 {% endblock %}
 
 {% block content %}
-<section class="hero">
-    <span class="section-badge">Administración</span>
-    <h2>Panel de citas</h2>
-    <p>Consulta el calendario y el listado detallado de reservas.</p>
-</section>
-
 <section class="card">
-    <section class="admin-security-panel" aria-labelledby="admin-security-title">
-        <div class="admin-security-intro">
-            <span class="admin-security-pill">Seguridad</span>
-            <h3 id="admin-security-title">Cambio de contraseña admin</h3>
-            <p>Mantén protegido el acceso al dashboard actualizando tu clave regularmente.</p>
-            <p class="admin-security-note">Regla rápida: usa entre 6 y {{ max_password_length }} caracteres y evita repetir la clave actual.</p>
-        </div>
+    <div class="admin-layout">
+        <aside class="admin-sidebar" aria-label="Navegación del panel admin">
+            <button type="button" class="admin-nav-item is-active" data-panel="panel-appointments">Agenda y citas</button>
+            <button type="button" class="admin-nav-item" data-panel="panel-metrics">Métricas</button>
+            <button type="button" class="admin-nav-item" data-panel="panel-employees">Empleados</button>
+            <button type="button" class="admin-nav-item" data-panel="panel-services">Servicios</button>
+            <button type="button" class="admin-nav-item" data-panel="panel-security">Seguridad</button>
+        </aside>
 
-        <form id="admin-password-form" class="admin-password-form" action="{{ url_for('admin_change_password') }}" method="post" autocomplete="off">
-            <div class="password-field-group">
-                <label for="current_password">Contraseña actual</label>
-                <div class="password-input-wrap">
-                    <input id="current_password" type="password" name="current_password" minlength="6" maxlength="{{ max_password_length }}" autocomplete="current-password" required>
-                    <button type="button" class="password-toggle" data-target="current_password" aria-label="Mostrar contraseña actual">Mostrar</button>
-                </div>
+        <div class="admin-content">
+    <section id="panel-security" class="admin-tab-panel">
+    <details class="admin-security-dropdown" open>
+        <summary class="admin-security-summary">
+            <span class="admin-security-summary-left">
+                <span class="admin-security-pill">Seguridad</span>
+                <span class="admin-security-summary-title">Cambio de contraseña admin</span>
+            </span>
+            <span class="admin-security-summary-caret" aria-hidden="true">▾</span>
+        </summary>
+
+        <section class="admin-security-panel" aria-labelledby="admin-security-title">
+            <div class="admin-security-intro">
+                <h3 id="admin-security-title" class="admin-panel-title">Cambio de contraseña admin</h3>
+                <p class="admin-panel-subtitle">Mantén protegido el acceso al dashboard actualizando tu clave regularmente.</p>
+                <p class="admin-security-note">Regla rápida: usa entre 6 y {{ max_password_length }} caracteres y evita repetir la clave actual.</p>
             </div>
 
-            <div class="password-field-group">
-                <label for="new_password">Nueva contraseña</label>
-                <div class="password-input-wrap">
-                    <input id="new_password" type="password" name="new_password" minlength="6" maxlength="{{ max_password_length }}" autocomplete="new-password" required>
-                    <button type="button" class="password-toggle" data-target="new_password" aria-label="Mostrar nueva contraseña">Mostrar</button>
+            <form id="admin-password-form" class="admin-password-form" action="{{ url_for('admin_change_password') }}" method="post" autocomplete="off">
+                <div class="password-field-group">
+                    <label for="current_password">Contraseña actual</label>
+                    <div class="password-input-wrap">
+                        <input id="current_password" type="password" name="current_password" minlength="6" maxlength="{{ max_password_length }}" autocomplete="current-password" required>
+                        <button type="button" class="password-toggle" data-target="current_password" aria-label="Mostrar contraseña actual">Mostrar</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="password-field-group">
-                <label for="confirm_password">Confirmar nueva contraseña</label>
-                <div class="password-input-wrap">
-                    <input id="confirm_password" type="password" name="confirm_password" minlength="6" maxlength="{{ max_password_length }}" autocomplete="new-password" required>
-                    <button type="button" class="password-toggle" data-target="confirm_password" aria-label="Mostrar confirmación de contraseña">Mostrar</button>
+                <div class="password-field-group">
+                    <label for="new_password">Nueva contraseña</label>
+                    <div class="password-input-wrap">
+                        <input id="new_password" type="password" name="new_password" minlength="6" maxlength="{{ max_password_length }}" autocomplete="new-password" required>
+                        <button type="button" class="password-toggle" data-target="new_password" aria-label="Mostrar nueva contraseña">Mostrar</button>
+                    </div>
                 </div>
-            </div>
 
-            <div id="password-strength" class="password-strength" data-strength="none" aria-live="polite">
-                <div class="password-strength-track">
-                    <span id="password-strength-fill" class="password-strength-fill"></span>
+                <div class="password-field-group">
+                    <label for="confirm_password">Confirmar nueva contraseña</label>
+                    <div class="password-input-wrap">
+                        <input id="confirm_password" type="password" name="confirm_password" minlength="6" maxlength="{{ max_password_length }}" autocomplete="new-password" required>
+                        <button type="button" class="password-toggle" data-target="confirm_password" aria-label="Mostrar confirmación de contraseña">Mostrar</button>
+                    </div>
                 </div>
-                <small id="password-strength-text">Fortaleza: pendiente.</small>
-            </div>
 
-            <p id="password-match-status" class="password-match-status" aria-live="polite"></p>
+                <div id="password-strength" class="password-strength" data-strength="none" aria-live="polite">
+                    <div class="password-strength-track">
+                        <span id="password-strength-fill" class="password-strength-fill"></span>
+                    </div>
+                    <small id="password-strength-text">Fortaleza: pendiente.</small>
+                </div>
 
-            <button type="submit" class="button-secondary admin-password-submit">Actualizar contraseña</button>
-        </form>
+                <p id="password-match-status" class="password-match-status" aria-live="polite"></p>
+
+                <button type="submit" class="button-secondary admin-password-submit">Actualizar contraseña</button>
+            </form>
+        </section>
+    </details>
     </section>
 
+    <section id="panel-employees" class="admin-tab-panel admin-tab-panel-surface">
     <div class="employee-manager">
-        <div class="employee-manager-header" style="text-align: center;">
-            <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem;">Gestión de empleados</h3>
-            <p style="font-size: 1rem;">Agrega, edita o elimina personal desde este panel.</p>
+        <div class="employee-manager-header admin-panel-header">
+            <h3 class="admin-panel-title">Gestión de empleados</h3>
+            <p class="admin-panel-subtitle">Agrega, edita o elimina personal desde este panel.</p>
         </div>
 
         <form class="employee-create-form" action="{{ url_for('admin_add_employee') }}" method="post">
@@ -79,7 +95,7 @@
                         <option value="{{ service.name }}">{{ service.name }}</option>
                     {% endfor %}
                 </select>
-                <input type="text" name="work_area" placeholder="Especifique..." style="display:none; margin-top: 0.5rem;" maxlength="30">
+                <input type="text" name="work_area" placeholder="Especifique..." class="employee-work-area-custom" maxlength="30">
             </label>
             <label>
                 Email
@@ -96,11 +112,11 @@
                         <input type="hidden" name="emp_id" value="{{ employee.id }}">
                         <input type="text" name="employee_name_{{ employee.id }}" maxlength="16" pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:['’-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*(?: [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:['’-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*)?" title="Usa solo letras, máximo un espacio y caracteres comunes como apóstrofo o guion." value="{{ employee.name }}" required>
                         
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                            <span class="work-area-emoji" style="font-size: 1.5rem; min-width: 2rem; text-align: center;">
+                        <div class="employee-work-area-row">
+                            <span class="work-area-emoji">
                                 {% if employee.work_area == 'Corte de barba' %}🧔{% elif employee.work_area == 'Corte de cabello' %}✂️{% elif employee.work_area == 'Manicura' %}💅{% else %}👨‍✂️{% endif %}
                             </span>
-                            <select name="work_area_{{ employee.id }}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 0.25rem; padding: 0.5rem;" onchange="let emoji = '👨‍✂️'; if(this.value==='Corte de barba') emoji='🧔'; else if(this.value==='Corte de cabello') emoji='✂️'; else if(this.value==='Manicura') emoji='💅'; this.previousElementSibling.textContent=emoji;" required>
+                            <select name="work_area_{{ employee.id }}" class="employee-work-area-select" onchange="let emoji = '👨‍✂️'; if(this.value==='Corte de barba') emoji='🧔'; else if(this.value==='Corte de cabello') emoji='✂️'; else if(this.value==='Manicura') emoji='💅'; this.previousElementSibling.textContent=emoji;" required>
                                 <option value="General" {% if employee.work_area == 'General' %}selected{% endif %}>General</option>
                                 {% for service in services %}
                                     <option value="{{ service.name }}" {% if employee.work_area == service.name %}selected{% endif %}>{{ service.name }}</option>
@@ -118,7 +134,7 @@
                         </div>
 
                         <input type="email" name="employee_email_{{ employee.id }}" maxlength="30" value="{{ employee.email or '' }}" placeholder="Email opcional">
-                        <button type="submit" formaction="{{ url_for('admin_delete_employee', employee_id=employee.id) }}" class="button-danger" style="margin-top: 0.5rem;" onclick="return confirm('¿Eliminar este empleado?');">Eliminar empleado</button>
+                        <button type="submit" formaction="{{ url_for('admin_delete_employee', employee_id=employee.id) }}" class="button-danger employee-delete-button" onclick="return confirm('¿Eliminar este empleado?');">Eliminar empleado</button>
                     </div>
                 </div>
                 {% else %}
@@ -130,17 +146,19 @@
             </div>
             
             {% if employees %}
-            <div style="margin-top: 1rem;">
-                <button type="submit" class="button-secondary" style="width: 100%;">Confirmar cambios de todos los empleados</button>
+            <div class="employee-batch-actions">
+                <button type="submit" class="button-secondary employee-batch-submit">Confirmar cambios de todos los empleados</button>
             </div>
             {% endif %}
         </form>
     </div>
+    </section>
 
+    <section id="panel-services" class="admin-tab-panel admin-tab-panel-surface">
     <div class="employee-manager">
-        <div class="employee-manager-header">
-            <h4>Gestión de servicios</h4>
-            <p>Agrega nuevos servicios para que aparezcan en el formulario de reserva.</p>
+        <div class="employee-manager-header admin-panel-header">
+            <h3 class="admin-panel-title">Gestión de servicios</h3>
+            <p class="admin-panel-subtitle">Agrega nuevos servicios para que aparezcan en el formulario de reserva.</p>
         </div>
 
         <form class="employee-create-form" action="{{ url_for('admin_add_service') }}" method="post">
@@ -185,7 +203,13 @@
             {% endfor %}
         </div>
     </div>
+    </section>
 
+    <section id="panel-metrics" class="admin-tab-panel admin-tab-panel-surface">
+    <div class="admin-panel-header">
+        <h3 class="admin-panel-title">Métricas del negocio</h3>
+        <p class="admin-panel-subtitle">Resumen de desempeño, ranking y evolución de citas.</p>
+    </div>
     <div class="metrics-grid">
         <article class="metric-card">
             <h4>Total citas</h4>
@@ -205,26 +229,26 @@
                 metrics.status_counts.completed }} | C: {{ metrics.status_counts.canceled }}</p>
         </article>
         
-        <article class="metric-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
-            <h4 style="margin-bottom: 1rem; font-size: 1.1rem; font-weight: 500;">Empleado del Mes</h4>
+        <article class="metric-card employee-of-month-card">
+            <h4 class="employee-of-month-title">Empleado del Mes</h4>
             {% if employee_ratings %}
                 {% set best = employee_ratings[0] %}
-                <div style="font-size: 3.5rem; margin-bottom: 0.5rem; line-height: 1;">
+                <div class="employee-of-month-emoji">
                     {% if best.work_area == 'Corte de barba' %}🧔{% elif best.work_area == 'Corte de cabello' %}✂️{% elif best.work_area == 'Manicura' %}💅{% else %}👨‍✂️{% endif %}
                 </div>
-                <div style="font-size: 1.6rem; font-weight: bold; margin: 0; line-height: 1.2;">{{ best.name }}</div>
-                <small style="font-size: 0.9rem; color: var(--text-soft); display: block; margin-top: 0.2rem;">{{ best.work_area }}</small>
+                <div class="employee-of-month-name">{{ best.name }}</div>
+                <small class="employee-of-month-area">{{ best.work_area }}</small>
             {% else %}
-                <p style="font-size: 1.1rem; color: var(--text-soft);">Sin datos este mes.</p>
+                <p class="employee-of-month-empty">Sin datos este mes.</p>
             {% endif %}
         </article>
     </div>
 
     {% if employee_ratings %}
-    <div class="card" style="margin-bottom: 2rem;">
-        <div class="section-heading compact">
-            <h3>Ranking de Empleados (Este Mes)</h3>
-            <p>Calificaciones basadas en el feedback de los clientes.</p>
+    <div class="card ranking-card">
+        <div class="admin-panel-header admin-panel-header-compact">
+            <h3 class="admin-section-title">Ranking de Empleados (Este Mes)</h3>
+            <p class="admin-panel-subtitle">Calificaciones basadas en el feedback de los clientes.</p>
         </div>
         <div class="table-wrapper">
             <table>
@@ -232,22 +256,22 @@
                     <tr>
                         <th>Puesto</th>
                         <th>Empleado</th>
-                        <th style="text-align: center;">Calificación</th>
-                        <th style="text-align: center;">Total Reseñas</th>
+                        <th class="table-cell-center">Calificación</th>
+                        <th class="table-cell-center">Total Reseñas</th>
                         <th>Comentarios Recientes</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for emp in employee_ratings %}
                     <tr>
-                        <td style="font-weight: bold; width: 60px;">#{{ loop.index }}</td>
+                        <td class="ranking-position-cell">#{{ loop.index }}</td>
                         <td>{{ emp.name }}</td>
-                        <td style="text-align: center; color: var(--primary-color); font-weight: bold;">{{ emp.average }} / 5.0</td>
-                        <td style="text-align: center;">{{ emp.total_ratings }}</td>
-                        <td style="font-size: 0.85rem; max-width: 250px;">
+                        <td class="ranking-rating-cell">{{ emp.average }} / 5.0</td>
+                        <td class="table-cell-center">{{ emp.total_ratings }}</td>
+                        <td class="ranking-comments-cell">
                             {% for c in emp.comments[:2] %}
-                                <div style="margin-bottom: 0.25rem; border-left: 2px solid var(--primary-color); padding-left: 0.5rem;">
-                                    "{{ c.comment }}" <span style="color:#f59e0b;">★{{ c.rating }}</span>
+                                <div class="ranking-comment-item">
+                                    "{{ c.comment }}" <span class="ranking-comment-star">★{{ c.rating }}</span>
                                 </div>
                             {% endfor %}
                         </td>
@@ -260,7 +284,7 @@
     {% endif %}
 
     <div class="mini-table-card">
-        <h4>Citas por día</h4>
+        <h4 class="admin-section-title">Citas por día</h4>
         <div class="charts-grid">
             <div class="chart-card">
                 <canvas id="appointmentsByDayChart" aria-label="Gráfico de citas por día"></canvas>
@@ -297,9 +321,15 @@
             </table>
         </div>
     </div>
+    </section>
 
+    <section id="panel-appointments" class="admin-tab-panel admin-tab-panel-surface is-active">
+    <div class="admin-panel-header">
+        <h3 class="admin-panel-title">Agenda y citas</h3>
+        <p class="admin-panel-subtitle">Visualiza el calendario y administra las reservas con filtros rápidos.</p>
+    </div>
     <div class="calendar-card">
-        <h3>Calendario de citas</h3>
+        <h3 class="admin-section-title">Calendario de citas</h3>
         <div class="calendar-legend" aria-label="Leyenda de colores por empleado">
             {% for item in leyenda_colores %}
             <div class="calendar-legend-item">
@@ -311,12 +341,12 @@
         <div id="admin-calendar" data-events-url="{{ url_for('admin_appointments_api') }}"></div>
     </div>
 
-    <h3 class="table-title">Listado detallado</h3>
+    <h3 class="table-title admin-section-title">Listado detallado</h3>
 
-    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1rem;">
+    <div class="appointments-actions-toolbar">
         <form action="{{ url_for('admin_cleanup_canceled_appointments') }}" method="post"
             onsubmit="return confirm('¿Seguro que deseas eliminar todas las citas canceladas? Esta acción no se puede deshacer.');"
-            style="margin: 0;">
+            class="appointments-inline-form">
             <input type="hidden" name="filter_date" value="{{ filters.date }}">
             <input type="hidden" name="filter_employee_id" value="{{ filters.employee_id }}">
             <input type="hidden" name="filter_status" value="{{ filters.status }}">
@@ -325,7 +355,7 @@
 
         <form action="{{ url_for('admin_cleanup_completed_appointments') }}" method="post"
             onsubmit="return confirm('¿Seguro que deseas eliminar todas las citas atendidas? Esta acción no se puede deshacer.');"
-            style="margin: 0;">
+            class="appointments-inline-form">
             <input type="hidden" name="filter_date" value="{{ filters.date }}">
             <input type="hidden" name="filter_employee_id" value="{{ filters.employee_id }}">
             <input type="hidden" name="filter_status" value="{{ filters.status }}">
@@ -461,6 +491,9 @@
             </tbody>
         </table>
     </div>
+    </section>
+    </div>
+    </div>
 </section>
 {% endblock %}
 
@@ -469,6 +502,67 @@
 <script id="appointments-status-data" type="application/json">{{ metrics.status_counts | tojson }}</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script>
+(() => {
+    const navButtons = Array.from(document.querySelectorAll(".admin-nav-item"));
+    const tabPanels = Array.from(document.querySelectorAll(".admin-tab-panel"));
+
+    if (!navButtons.length || !tabPanels.length) {
+        return;
+    }
+
+    const setActivePanel = (panelId) => {
+        tabPanels.forEach((panel) => {
+            panel.classList.toggle("is-active", panel.id === panelId);
+        });
+
+        navButtons.forEach((button) => {
+            const isActive = button.dataset.panel === panelId;
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+    };
+
+    const STORAGE_KEY = "admin_active_panel";
+    const panelFromQuery = new URLSearchParams(window.location.search).get("panel");
+    let panelFromStorage = null;
+    try {
+        panelFromStorage = localStorage.getItem(STORAGE_KEY);
+    } catch (_error) {
+        panelFromStorage = null;
+    }
+    const fallbackPanel = "panel-appointments";
+    const validPanelIds = new Set(tabPanels.map((panel) => panel.id));
+
+    let initialPanel = panelFromQuery || panelFromStorage || fallbackPanel;
+    if (!validPanelIds.has(initialPanel)) {
+        initialPanel = fallbackPanel;
+    }
+
+    setActivePanel(initialPanel);
+    try {
+        localStorage.setItem(STORAGE_KEY, initialPanel);
+    } catch (_error) {
+        // Ignore storage failures (private mode or blocked storage).
+    }
+
+    navButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const targetPanel = button.dataset.panel;
+            if (!validPanelIds.has(targetPanel)) {
+                return;
+            }
+
+            setActivePanel(targetPanel);
+            try {
+                localStorage.setItem(STORAGE_KEY, targetPanel);
+            } catch (_error) {
+                // Ignore storage failures (private mode or blocked storage).
+            }
+        });
+    });
+})();
+</script>
 <script>
 (() => {
     const form = document.getElementById("admin-password-form");

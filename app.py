@@ -105,6 +105,15 @@ def _admin_autenticado():
     return bool(session.get("is_admin"))
 
 
+# Qué hace: define clave de rate-limit para login admin con menor colisión.
+# Qué valida: N/A.
+# Qué retorna: clave basada en IP + User-Agent.
+def _admin_login_rate_limit_key():
+    ip_address = get_remote_address() or "unknown-ip"
+    user_agent = (request.headers.get("User-Agent") or "unknown-agent")[:120]
+    return f"{ip_address}:{user_agent}"
+
+
 # Qué hace: parsea una fecha en formato `YYYY-MM-DD`.
 # Qué valida: formato correcto de fecha.
 # Qué retorna: N/A (lanza `ValueError` si falla).
@@ -545,13 +554,13 @@ def booking_success(appointment_id: int):
 # Qué valida: longitud de clave y hash de contraseña.
 # Qué retorna: HTML de login o redirección al dashboard.
 @app.route("/admin/login", methods=["GET", "POST"])
-@limiter.limit("5 per minute", methods=["POST"])
+@limiter.limit("10 per minute", methods=["POST"], key_func=_admin_login_rate_limit_key)
 def admin_login():
     if request.method == "POST":
         password = request.form.get("password", "")
         if len(password) > MAX_LONGITUD_CLAVE:
             flash("Clave incorrecta.", "error")
-            return render_template("admin_ingreso.html")
+            return render_template("admin_ingreso.html", max_password_length=MAX_LONGITUD_CLAVE)
 
         stored_admin_hash = get_admin_password_hash()
         try:
@@ -566,7 +575,7 @@ def admin_login():
 
         flash("Clave incorrecta.", "error")
 
-    return render_template("admin_ingreso.html")
+    return render_template("admin_ingreso.html", max_password_length=MAX_LONGITUD_CLAVE)
 
 
 # Qué hace: cierra sesión de administrador.
@@ -1196,6 +1205,8 @@ def rate_limit_exceeded(_error):
         return jsonify({"error": "Demasiadas solicitudes. Intenta de nuevo en unos segundos."}), 429
 
     flash("Demasiados intentos. Espera un momento e inténtalo nuevamente.", "error")
+    if request.path.startswith("/admin/login"):
+        return redirect(url_for("admin_login"))
     return redirect(request.referrer or url_for("home"))
 
 

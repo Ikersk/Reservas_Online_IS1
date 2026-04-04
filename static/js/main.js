@@ -239,6 +239,34 @@
         });
 
         calendar.render();
+
+        const parentPanel = calendarElement.closest('.admin-tab-panel');
+
+        const syncCalendarLayout = () => {
+            if (parentPanel && !parentPanel.classList.contains('is-active')) {
+                return;
+            }
+
+            requestAnimationFrame(() => {
+                calendar.updateSize();
+            });
+        };
+
+        if (parentPanel) {
+            const panelObserver = new MutationObserver(() => {
+                if (parentPanel.classList.contains('is-active')) {
+                    syncCalendarLayout();
+                }
+            });
+
+            panelObserver.observe(parentPanel, {
+                attributes: true,
+                attributeFilter: ['class'],
+            });
+        }
+
+        window.addEventListener('resize', syncCalendarLayout);
+        setTimeout(syncCalendarLayout, 0);
     }
 
     // Qué hace: renderiza el gráfico de barras de citas por día en admin.
