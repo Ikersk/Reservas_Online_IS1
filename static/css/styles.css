@@ -220,6 +220,11 @@ body::after {
     padding: 0 16px;
 }
 
+.page-admin .container {
+    max-width: min(96vw, 1600px);
+    padding: 0 20px;
+}
+
 .hero {
     margin-bottom: 22px;
     background: var(--glass-bg);
@@ -609,6 +614,148 @@ button:hover {
 
 .payment-timer-card small {
     color: #78350f;
+}
+
+.admin-security-panel {
+    margin-bottom: 16px;
+    padding: 14px;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(16, 185, 129, 0.05));
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    align-items: start;
+}
+
+.admin-security-intro {
+    border: 1px solid rgba(59, 130, 246, 0.22);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.42);
+    align-self: start;
+}
+
+.admin-security-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.admin-security-intro h3 {
+    margin: 7px 0 5px;
+    font-size: 1rem;
+}
+
+.admin-security-intro p {
+    margin: 0;
+    color: #334155;
+    font-size: 0.86rem;
+}
+
+.admin-security-note {
+    margin-top: 8px !important;
+    padding-top: 8px;
+    border-top: 1px solid rgba(148, 163, 184, 0.32);
+    font-size: 0.78rem !important;
+    color: #475569 !important;
+}
+
+.admin-password-form {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+}
+
+.password-field-group label {
+    text-align: left;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.password-input-wrap {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.password-toggle {
+    min-height: 42px;
+    padding: 0 12px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.password-strength {
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.password-strength-track {
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.3);
+    overflow: hidden;
+}
+
+.password-strength-fill {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    transition: width 0.25s ease, background-color 0.25s ease;
+    background: #94a3b8;
+}
+
+.password-strength[data-strength="weak"] .password-strength-fill {
+    background: #ef4444;
+}
+
+.password-strength[data-strength="medium"] .password-strength-fill {
+    background: #f59e0b;
+}
+
+.password-strength[data-strength="strong"] .password-strength-fill {
+    background: #16a34a;
+}
+
+.password-strength small {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #475569;
+}
+
+.password-match-status {
+    margin: 0;
+    min-height: 18px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.password-match-status.is-ok {
+    color: #166534;
+}
+
+.password-match-status.is-error {
+    color: #b91c1c;
+}
+
+.admin-password-submit {
+    width: 100%;
+    font-size: 13px;
+    min-height: 44px;
 }
 
 .employee-manager {
@@ -1062,6 +1209,44 @@ html[data-theme="dark"] .employee-manager {
     /* Let background fall back to var(--glass-bg) */
 }
 
+html[data-theme="dark"] .admin-security-panel {
+    border-color: rgba(148, 163, 184, 0.24);
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.18), rgba(6, 95, 70, 0.16));
+}
+
+html[data-theme="dark"] .admin-security-intro {
+    border-color: rgba(96, 165, 250, 0.3);
+    background: rgba(15, 23, 42, 0.28);
+}
+
+html[data-theme="dark"] .admin-security-pill {
+    background: rgba(96, 165, 250, 0.22);
+    color: #bfdbfe;
+}
+
+html[data-theme="dark"] .admin-security-intro p,
+html[data-theme="dark"] .admin-security-note,
+html[data-theme="dark"] .password-strength small {
+    color: #dbeafe;
+}
+
+html[data-theme="dark"] .password-strength {
+    border-color: rgba(148, 163, 184, 0.24);
+    background: rgba(15, 23, 42, 0.32);
+}
+
+html[data-theme="dark"] .password-strength-track {
+    background: rgba(148, 163, 184, 0.22);
+}
+
+html[data-theme="dark"] .password-match-status.is-ok {
+    color: #86efac;
+}
+
+html[data-theme="dark"] .password-match-status.is-error {
+    color: #fca5a5;
+}
+
 html[data-theme="dark"] .employee-item {
     background: rgba(255, 255, 255, 0.04);
     backdrop-filter: none;
@@ -1221,6 +1406,19 @@ html[data-theme="dark"] .prices-card td:nth-child(4) {
 
     .service-edit-form {
         grid-template-columns: 1fr;
+    }
+
+    .admin-security-panel {
+        grid-template-columns: 1fr;
+        padding: 14px;
+    }
+
+    .password-input-wrap {
+        grid-template-columns: 1fr;
+    }
+
+    .password-toggle {
+        width: 100%;
     }
 }
 

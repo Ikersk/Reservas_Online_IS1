@@ -5,7 +5,7 @@ import re
 import csv
 from io import StringIO
 from urllib.parse import urlencode
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session, Response
 from flask_limiter import Limiter
@@ -13,7 +13,6 @@ from flask_limiter.util import get_remote_address
 
 from configuracion import (
     SECRET_KEY,
-    ADMIN_PASSWORD_HASH,
     PAYMENT_RECEIVER_BANK,
     PAYMENT_RECEIVER_PHONE,
     PAYMENT_RECEIVER_ID,
@@ -68,6 +67,8 @@ from base_datos import (
     validate_client_for_rating,
     delete_canceled_appointments,
     delete_completed_appointments,
+    get_admin_password_hash,
+    update_admin_password_hash,
 )
 from servicio_correo import send_reservation_confirmation, send_rating_request
 from servicio_recordatorios import start_scheduler
@@ -552,7 +553,13 @@ def admin_login():
             flash("Clave incorrecta.", "error")
             return render_template("admin_ingreso.html")
 
-        if check_password_hash(ADMIN_PASSWORD_HASH, password):
+        stored_admin_hash = get_admin_password_hash()
+        try:
+            password_is_valid = check_password_hash(stored_admin_hash, password)
+        except ValueError:
+            password_is_valid = False
+
+        if password_is_valid:
             session.permanent = True
             session["is_admin"] = True
             return redirect(url_for("admin_dashboard"))
@@ -627,12 +634,68 @@ def admin_dashboard():
         leyenda_colores=leyenda_colores,
         metrics=metrics,
         employee_ratings=employee_ratings,
+        max_password_length=MAX_LONGITUD_CLAVE,
         filters={
             "date": filter_date,
             "employee_id": filter_employee,
             "status": filter_status,
         },
     )
+
+
+# Qué hace: permite cambiar la contraseña del administrador autenticado.
+# Qué valida: contraseña actual, confirmación y reglas básicas de longitud.
+# Qué retorna: redirección al dashboard con mensaje.
+@app.post("/admin/change-password")
+@limiter.limit("5 per minute")
+def admin_change_password():
+    if not _admin_autenticado():
+        return redirect(url_for("admin_login"))
+
+    current_password = request.form.get("current_password", "")
+    new_password = request.form.get("new_password", "")
+    confirm_password = request.form.get("confirm_password", "")
+
+    if not current_password or not new_password or not confirm_password:
+        flash("Debes completar todos los campos para cambiar la contraseña.", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    if any(len(value) > MAX_LONGITUD_CLAVE for value in (current_password, new_password, confirm_password)):
+        flash("La contraseña no cumple con la longitud permitida.", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    if len(new_password) < 6:
+        flash("La nueva contraseña debe tener al menos 6 caracteres.", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    if new_password != confirm_password:
+        flash("La confirmación de la nueva contraseña no coincide.", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    stored_admin_hash = get_admin_password_hash()
+    try:
+        current_password_is_valid = check_password_hash(stored_admin_hash, current_password)
+    except ValueError:
+        current_password_is_valid = False
+
+    if not current_password_is_valid:
+        flash("La contraseña actual es incorrecta.", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    try:
+        is_same_password = check_password_hash(stored_admin_hash, new_password)
+    except ValueError:
+        is_same_password = False
+
+    if is_same_password:
+        flash("La nueva contraseña debe ser distinta a la actual.", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    new_password_hash = generate_password_hash(new_password)
+    success, message = update_admin_password_hash(new_password_hash)
+    flash(message, "success" if success else "error")
+
+    return redirect(url_for("admin_dashboard"))
 
 # Qué hace: exporta citas a CSV.
 # Qué valida: sesión de admin y usa los mismos filtros.

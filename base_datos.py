@@ -10,6 +10,7 @@ from sqlalchemy.orm import declarative_base, mapped_column, Mapped, relationship
 
 from configuracion import (
     DB_PATH,
+    ADMIN_PASSWORD_HASH,
     BUSINESS_OPEN_HOUR,
     BUSINESS_CLOSE_HOUR,
     SLOT_DURATION_MINUTES,
@@ -43,6 +44,7 @@ SERVICE_PRICE_USD = {
 }
 SERVICES = list(SERVICE_CATALOG.keys())
 ALLOWED_APPOINTMENT_STATUS = {"pending_payment", "scheduled", "completed", "canceled"}
+ADMIN_PASSWORD_HASH_SETTING_KEY = "admin_password_hash"
 
 DATE_FORMAT = "%Y-%m-%d"
 DATETIME_FORMAT = "%Y-%m-%d %H:%M"
@@ -307,6 +309,17 @@ def init_db():
     with engine.begin() as connection:
         _ensure_appointments_service_fk(connection)
 
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS system_settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                )
+                """
+            )
+        )
+
         existing_emp_columns = {
             row[1] for row in connection.execute(text("PRAGMA table_info(employees)")).fetchall()
         }
@@ -334,6 +347,25 @@ def init_db():
         for column_name, column_type in extra_columns.items():
             if column_name not in existing_columns:
                 connection.execute(text(f"ALTER TABLE appointments ADD COLUMN {column_name} {column_type}"))
+
+        admin_hash = connection.execute(
+            text("SELECT value FROM system_settings WHERE key = :key"),
+            {"key": ADMIN_PASSWORD_HASH_SETTING_KEY},
+        ).scalar_one_or_none()
+
+        if not admin_hash:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO system_settings (key, value)
+                    VALUES (:key, :value)
+                    """
+                ),
+                {
+                    "key": ADMIN_PASSWORD_HASH_SETTING_KEY,
+                    "value": ADMIN_PASSWORD_HASH,
+                },
+            )
 
     with get_session() as session:
         existing_employees = session.query(Employee).count()
@@ -377,6 +409,58 @@ def _refresh_services_cache():
 
     SERVICES.clear()
     SERVICES.extend(SERVICE_CATALOG.keys())
+
+
+# Qué hace: obtiene el hash actual de contraseña del admin.
+# Qué valida: fallback al hash por defecto si no hay valor persistido.
+# Qué retorna: hash de contraseña para autenticación admin.
+def get_admin_password_hash():
+    try:
+        with get_session() as session:
+            stored_hash = session.execute(
+                text("SELECT value FROM system_settings WHERE key = :key"),
+                {"key": ADMIN_PASSWORD_HASH_SETTING_KEY},
+            ).scalar_one_or_none()
+    except Exception:
+        return ADMIN_PASSWORD_HASH
+
+    return stored_hash or ADMIN_PASSWORD_HASH
+
+
+# Qué hace: actualiza el hash de contraseña del admin en persistencia.
+# Qué valida: hash no vacío y aplica upsert por clave única.
+# Qué retorna: `(success, mensaje)`.
+def update_admin_password_hash(new_hash: str):
+    normalized_hash = (new_hash or "").strip()
+    if not normalized_hash:
+        return False, "No se pudo actualizar la contraseña del administrador."
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS system_settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO system_settings (key, value)
+                VALUES (:key, :value)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                """
+            ),
+            {
+                "key": ADMIN_PASSWORD_HASH_SETTING_KEY,
+                "value": normalized_hash,
+            },
+        )
+
+    return True, "Contraseña de administrador actualizada correctamente."
 
 
 # Qué hace: consulta todos los servicios ordenados por nombre.

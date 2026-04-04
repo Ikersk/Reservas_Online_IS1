@@ -33,22 +33,22 @@
             <div id="brand-dropdown"
                 style="display: none; position: absolute; top: calc(100% + 0.8rem); left: 0; background: var(--glass-bg, rgba(255,255,255,0.8)); backdrop-filter: var(--glass-filter, blur(20px)); -webkit-backdrop-filter: var(--glass-filter, blur(20px)); box-shadow: var(--glass-inset), 0 10px 25px rgba(0,0,0,0.15); border-radius: 20px; overflow: hidden; z-index: 50; min-width: 220px; border: var(--glass-border);">
                 {% if session.get('is_admin') %}
+                <a href="{{ url_for('home') }}"
+                    style="display: block; padding: 1rem 1.25rem; color: var(--text-main, #1e293b); text-decoration: none; border-bottom: 1px solid var(--line-soft, #e2e8f0); font-weight: 600;">Reservas</a>
                 <a href="{{ url_for('admin_dashboard') }}"
                     style="display: block; padding: 1rem 1.25rem; color: var(--text-main, #1e293b); text-decoration: none; border-bottom: 1px solid var(--line-soft, #e2e8f0); font-weight: 600;">Administración</a>
                 <a href="{{ url_for('admin_logout') }}"
                     style="display: block; padding: 1rem 1.25rem; color: #ef4444; text-decoration: none; font-weight: 600;">Cerrar
                     sesión</a>
                 {% else %}
+                <a href="{{ url_for('home') }}"
+                    style="display: block; padding: 1rem 1.25rem; color: var(--text-main, #1e293b); text-decoration: none; border-bottom: 1px solid var(--line-soft, #e2e8f0); font-weight: 600;">Reservas</a>
                 <a href="{{ url_for('admin_login') }}"
                     style="display: block; padding: 1rem 1.25rem; color: var(--text-main, #1e293b); text-decoration: none; font-weight: 600;">Administración</a>
                 {% endif %}
             </div>
         </div>
         <div class="header-actions">
-            <nav>
-                <a href="{{ url_for('home') }}"
-                    class="nav-link {% if request.path == '/' %}active{% endif %}">Reservas</a>
-            </nav>
             <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Cambiar tema" title="Modo oscuro"
                 style="font-size: 1.2rem; padding: 0; border: none;">🌙</button>
         </div>
