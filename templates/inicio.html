@@ -288,7 +288,10 @@
         
         previewBtn.addEventListener("click", () => {
             if (!bookingForm.checkValidity()) {
-                bookingForm.reportValidity();
+                const firstInvalid = bookingForm.querySelector(":invalid");
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                }
                 return;
             }
 

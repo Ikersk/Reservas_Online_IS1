@@ -445,6 +445,259 @@
         }, 1000);
     }
 
+    // Qué hace: aplica validación en vivo a campos de texto antes del envío.
+    // Qué valida: reglas nativas HTML + nombres con repeticiones excesivas + correos con espacios.
+    // Qué retorna: N/A.
+    function initLiveFieldValidation() {
+        const fields = Array.from(document.querySelectorAll(
+            'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]), textarea'
+        ));
+
+        if (!fields.length) {
+            return;
+        }
+
+        const errorNodes = new WeakMap();
+
+        const getOrCreateErrorNode = (field) => {
+            let node = errorNodes.get(field);
+            if (node) {
+                return node;
+            }
+
+            node = document.createElement('div');
+            node.className = 'field-error-popup';
+            node.setAttribute('aria-live', 'polite');
+            node.setAttribute('role', 'status');
+
+            document.body.appendChild(node);
+            errorNodes.set(field, node);
+            return node;
+        };
+
+        const positionFieldError = (field, node) => {
+            const rect = field.getBoundingClientRect();
+            const gap = 8;
+            const viewportPadding = 8;
+
+            node.style.left = `${viewportPadding}px`;
+            node.style.top = `${viewportPadding}px`;
+
+            const nodeWidth = node.offsetWidth;
+            const nodeHeight = node.offsetHeight;
+
+            let left = rect.left;
+            if (left + nodeWidth > window.innerWidth - viewportPadding) {
+                left = window.innerWidth - nodeWidth - viewportPadding;
+            }
+            if (left < viewportPadding) {
+                left = viewportPadding;
+            }
+
+            let top = rect.bottom + gap;
+            if (top + nodeHeight > window.innerHeight - viewportPadding) {
+                top = rect.top - nodeHeight - gap;
+            }
+            if (top < viewportPadding) {
+                top = viewportPadding;
+            }
+
+            node.style.left = `${Math.round(left)}px`;
+            node.style.top = `${Math.round(top)}px`;
+        };
+
+        const hideFieldError = (field) => {
+            field.classList.remove('is-invalid-field');
+            field.removeAttribute('aria-invalid');
+
+            const node = errorNodes.get(field);
+            if (!node) {
+                return;
+            }
+
+            node.textContent = '';
+            node.classList.remove('is-visible');
+        };
+
+        const showFieldError = (field, message) => {
+            const node = getOrCreateErrorNode(field);
+            node.textContent = message;
+
+            node.style.visibility = 'hidden';
+            node.classList.add('is-visible');
+            positionFieldError(field, node);
+            node.style.visibility = '';
+
+            field.classList.add('is-invalid-field');
+            field.setAttribute('aria-invalid', 'true');
+        };
+
+        const normalizeBasicAscii = (value) => value
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+
+        const hasExcessiveNameRepetition = (value) => {
+            const normalizedLetters = normalizeBasicAscii(value).replace(/[^a-z]/g, '');
+
+            if (!normalizedLetters) {
+                return true;
+            }
+
+            if (new Set(normalizedLetters).size === 1 && normalizedLetters.length >= 3) {
+                return true;
+            }
+
+            if (/([a-z])\1{3,}/.test(normalizedLetters)) {
+                return true;
+            }
+
+            if (normalizedLetters.length >= 6) {
+                const counts = {};
+                let maxCount = 0;
+
+                for (const ch of normalizedLetters) {
+                    counts[ch] = (counts[ch] || 0) + 1;
+                    if (counts[ch] > maxCount) {
+                        maxCount = counts[ch];
+                    }
+                }
+
+                if ((maxCount / normalizedLetters.length) >= 0.75) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        const isPersonNameField = (fieldName) => {
+            const normalizedName = (fieldName || '').toLowerCase();
+            return /^client_name$|^employee_name(?:_\d+)?$/.test(normalizedName);
+        };
+
+        const customMessageForField = (field) => {
+            const fieldName = field.getAttribute('name') || '';
+            const value = String(field.value || '').trim().replace(/\s+/g, ' ');
+
+            if (!value) {
+                return '';
+            }
+
+            if (isPersonNameField(fieldName) && hasExcessiveNameRepetition(value)) {
+                return 'El nombre parece invalido. Evita repeticiones excesivas como aaaaaa.';
+            }
+
+            if (field.type === 'email' && /\s/.test(field.value)) {
+                return 'El correo no puede contener espacios.';
+            }
+
+            return '';
+        };
+
+        const getFieldErrorMessage = (field) => {
+            field.setCustomValidity(customMessageForField(field));
+            return field.validity.valid ? '' : field.validationMessage;
+        };
+
+        const validateField = (field) => {
+            const message = getFieldErrorMessage(field);
+            if (!message) {
+                hideFieldError(field);
+                return true;
+            }
+
+            const formValidationAttempted = field.form?.dataset.validationAttempted === 'true';
+            const isRequiredEmpty = field.validity.valueMissing;
+            const shouldShowMessage = formValidationAttempted || (field.dataset.touched === 'true' && !isRequiredEmpty);
+
+            if (shouldShowMessage) {
+                showFieldError(field, message);
+            } else {
+                hideFieldError(field);
+            }
+            return false;
+        };
+
+        const markFormValidationAttempt = (form) => {
+            if (!form) {
+                return;
+            }
+
+            form.dataset.validationAttempted = 'true';
+            fields.forEach((field) => {
+                if (field.form === form) {
+                    validateField(field);
+                }
+            });
+        };
+
+        // Marca intento de confirmacion antes de la validacion de cada formulario.
+        document.addEventListener('click', (event) => {
+            const trigger = event.target.closest('button[type="submit"], input[type="submit"], #preview-booking-btn');
+            if (!trigger) {
+                return;
+            }
+
+            const form = trigger.form || trigger.closest('form');
+            markFormValidationAttempt(form);
+        }, true);
+
+        // Soporta envios con Enter aunque no exista click en boton.
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') {
+                return;
+            }
+
+            const activeElement = document.activeElement;
+            if (!activeElement || activeElement.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            const form = activeElement.form;
+            markFormValidationAttempt(form);
+        }, true);
+
+        fields.forEach((field) => {
+            field.addEventListener('input', () => {
+                validateField(field);
+            });
+
+            field.addEventListener('blur', () => {
+                field.dataset.touched = 'true';
+                validateField(field);
+            });
+
+            field.addEventListener('invalid', (event) => {
+                // Evita popup nativo bloqueante y usa popup visual propio.
+                event.preventDefault();
+                field.dataset.touched = 'true';
+                const message = getFieldErrorMessage(field);
+                if (message) {
+                    showFieldError(field, message);
+                }
+            });
+        });
+
+        window.addEventListener('scroll', () => {
+            fields.forEach((field) => {
+                const node = errorNodes.get(field);
+                if (node && node.classList.contains('is-visible')) {
+                    hideFieldError(field);
+                }
+            });
+        }, true);
+
+        window.addEventListener('resize', () => {
+            fields.forEach((field) => {
+                const node = errorNodes.get(field);
+                if (node && node.classList.contains('is-visible')) {
+                    hideFieldError(field);
+                }
+            });
+        });
+    }
+
     // Qué hace: previene doble envío en todos los formularios y da feedback visual.
     function initDoubleSubmitPrevention() {
         document.querySelectorAll('form').forEach(form => {
@@ -495,5 +748,6 @@
     initAdminMetricsChart();
     initAdminStatusChart();
     initPaymentCountdown();
+    initLiveFieldValidation();
     initDoubleSubmitPrevention();
 })();

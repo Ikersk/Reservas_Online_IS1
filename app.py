@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from hmac import compare_digest
 import re
 import csv
+import unicodedata
+from collections import Counter
 from io import StringIO
 from urllib.parse import urlencode
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -218,13 +220,45 @@ def _normalizar_numero_decimal_entrada(value: str):
     return normalized
 
 
+def _normalizar_ascii_basico(value: str):
+    normalized = unicodedata.normalize("NFD", value)
+    return "".join(ch for ch in normalized if unicodedata.category(ch) != "Mn").lower()
+
+
+def _nombre_con_repeticiones_excesivas(value: str):
+    # Evalua solo letras para evitar falsos positivos por espacios o guiones.
+    normalized_letters = "".join(ch for ch in _normalizar_ascii_basico(value) if "a" <= ch <= "z")
+    if not normalized_letters:
+        return True
+
+    # Ejemplo a bloquear: "aaaaaaaa".
+    if len(set(normalized_letters)) == 1 and len(normalized_letters) >= 3:
+        return True
+
+    # Bloquea secuencias largas del mismo caracter.
+    if re.search(r"([a-z])\1{3,}", normalized_letters):
+        return True
+
+    # Bloquea nombres con una sola letra dominando casi todo el valor.
+    if len(normalized_letters) >= 6:
+        most_common_count = Counter(normalized_letters).most_common(1)[0][1]
+        if most_common_count / len(normalized_letters) >= 0.75:
+            return True
+
+    return False
+
+
 def _nombre_persona_valido(value: str, max_longitud: int = MAX_LONGITUD_NOMBRE_EMPLEADO):
     normalized = _normalizar_texto(value)
     if not normalized or len(normalized) > max_longitud:
         return False
     if PATRON_NOMBRE_EMPLEADO.match(normalized) is None:
         return False
-    return any(ch.isalpha() for ch in normalized)
+    if not any(ch.isalpha() for ch in normalized):
+        return False
+    if _nombre_con_repeticiones_excesivas(normalized):
+        return False
+    return True
 
 
 # Alias para retrocompatibilidad
@@ -373,7 +407,7 @@ def book():
         return redirect(url_for("home"))
 
     if not _nombre_persona_valido(client_name):
-        flash("El nombre del cliente es inválido. Usa solo letras, máximo un espacio y caracteres comunes (apóstrofo o guion).", "error")
+        flash("El nombre del cliente es inválido. Usa letras reales y evita repeticiones excesivas.", "error")
         return redirect(url_for("home"))
 
     if not _email_valido(client_email):
@@ -766,7 +800,7 @@ def admin_add_employee():
     work_area = _normalizar_texto(request.form.get("work_area", "General"))
 
     if not _nombre_empleado_valido(employee_name):
-        flash("El nombre del empleado es inválido. Usa solo letras, espacios, apóstrofo o guion.", "error")
+        flash("El nombre del empleado es inválido. Usa letras reales y evita repeticiones excesivas.", "error")
         return redirect(url_for("admin_dashboard"))
 
     normalized_email = employee_email
@@ -890,7 +924,7 @@ def admin_edit_employee(employee_id: int):
     work_area = _normalizar_texto(request.form.get("work_area", "General"))
 
     if not _nombre_empleado_valido(employee_name):
-        flash("El nombre del empleado es inválido. Usa solo letras, espacios, apóstrofo o guion.", "error")
+        flash("El nombre del empleado es inválido. Usa letras reales y evita repeticiones excesivas.", "error")
         return redirect(url_for("admin_dashboard"))
 
     normalized_email = employee_email
@@ -928,7 +962,7 @@ def admin_batch_edit_employees():
         work_area = _normalizar_texto(request.form.get(f"work_area_{eid}", "General"))
 
         if not _nombre_empleado_valido(employee_name):
-            flash(f"El nombre '{employee_name}' es inválido.", "error")
+            flash(f"El nombre '{employee_name}' es inválido. Evita repeticiones excesivas.", "error")
             return redirect(url_for("admin_dashboard"))
 
         normalized_email = employee_email

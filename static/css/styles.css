@@ -444,6 +444,37 @@ select:focus {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
 }
 
+input.is-invalid-field,
+select.is-invalid-field,
+textarea.is-invalid-field {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16) !important;
+}
+
+.field-error-popup {
+    position: fixed;
+    z-index: 3000;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    margin: 0;
+    padding: 7px 10px;
+    max-width: min(340px, calc(100vw - 16px));
+    border-radius: 10px;
+    border: 1px solid rgba(248, 113, 113, 0.5);
+    background: rgba(254, 226, 226, 0.85);
+    color: #7f1d1d;
+    font-size: 12px;
+    line-height: 1.35;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+    transition: opacity 0.15s ease;
+}
+
+.field-error-popup.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
 button {
     background: rgba(37, 99, 235, 0.15);
     color: var(--text-main);
@@ -1441,6 +1472,19 @@ html[data-theme="dark"] select {
 
 html[data-theme="dark"] select option {
     color: #111827;
+}
+
+html[data-theme="dark"] input.is-invalid-field,
+html[data-theme="dark"] select.is-invalid-field,
+html[data-theme="dark"] textarea.is-invalid-field {
+    border-color: rgba(248, 113, 113, 0.75) !important;
+    box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.22) !important;
+}
+
+html[data-theme="dark"] .field-error-popup {
+    border-color: rgba(248, 113, 113, 0.45);
+    background: rgba(127, 29, 29, 0.35);
+    color: #fecaca;
 }
 
 html[data-theme="dark"] th,
