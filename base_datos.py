@@ -1227,6 +1227,52 @@ def submit_payment_proof(
     return True, "Comprobante recibido. Será validado por administración."
 
 
+# Qué hace: registra datos de pago Stripe y confirma la cita.
+# Qué valida: cita existente y estado permitido (`pending_payment` o `scheduled`).
+# Qué retorna: `(success, mensaje)`.
+def register_stripe_payment(
+    appointment_id: int,
+    payment_last4: str,
+    payment_brand: str,
+    payment_payer_id: str,
+    payment_datetime: str,
+):
+    normalized_last4 = "".join(ch for ch in str(payment_last4 or "") if ch.isdigit())
+    if len(normalized_last4) != 4:
+        normalized_last4 = "0000"
+
+    normalized_brand = re.sub(r"\s+", " ", str(payment_brand or "").strip()).upper() or "CARD"
+    normalized_payer = re.sub(r"\s+", " ", str(payment_payer_id or "").strip()) or "Cliente Stripe"
+    normalized_payment_datetime = re.sub(r"\s+", " ", str(payment_datetime or "").strip()) or get_local_now().strftime(CREATED_AT_FORMAT)
+
+    with get_session() as session:
+        appointment = session.get(Appointment, appointment_id)
+        if not appointment:
+            return False, "La cita no existe."
+
+        if appointment.status not in {"pending_payment", "scheduled"}:
+            return False, "La cita ya no está pendiente de pago."
+
+        was_pending = appointment.status == "pending_payment"
+
+        appointment.payment_last4 = normalized_last4
+        appointment.payment_bank = "Stripe"
+        appointment.payment_phone = f"Tarjeta {normalized_brand}"
+        appointment.payment_payer_id = normalized_payer
+        appointment.payment_datetime = normalized_payment_datetime
+        appointment.payment_submitted_at = get_local_now().strftime(CREATED_AT_FORMAT)
+
+        if was_pending:
+            appointment.status = "scheduled"
+
+        session.commit()
+
+    if was_pending:
+        return True, "Pago Stripe registrado y cita confirmada."
+
+    return True, "Pago Stripe ya estaba registrado para esta cita."
+
+
 # Qué hace: procesa decisión admin sobre un pago (`approve/reject`).
 # Qué valida: decisión válida, existencia de cita y estado pendiente.
 # Qué retorna: `(success, mensaje)`.

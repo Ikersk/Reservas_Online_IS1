@@ -3,21 +3,23 @@
 {% block title %}Reservar cita{% endblock %}
 
 {% block content %}
-<section class="hero">
+<section class="hero booking-hero">
+    <span class="section-badge">Reservas online</span>
     <h2>Reserva tu cita en segundos</h2>
     <p>Elige servicio, profesional, fecha y horario disponible en tiempo real.</p>
 </section>
 
-<section class="card" style="margin-bottom: 2rem;">
+<section class="card booking-team-section">
     <div class="section-heading compact">
         <h3>Conoce a nuestro equipo</h3>
+        <p>Profesionales con experiencia y calificaciones verificadas por clientes.</p>
     </div>
 
-    <div class="team-grid" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem;">
+    <div class="team-grid">
         {% for emp in employee_ratings %}
         <article class="info-card employee-rating-clickable" data-employee-id="{{ emp.id }}"
-            style="cursor: pointer; text-align: center; transition: transform 0.2s; min-width: 200px; max-width: 250px; flex: 1 1 200px;">
-            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">
+            >
+            <div class="team-member-icon">
                 {% if emp.work_area == 'Corte de barba' %}
                 🧔
                 {% elif emp.work_area == 'Corte de cabello' %}
@@ -28,15 +30,13 @@
                 👨‍✂️
                 {% endif %}
             </div>
-            <h4 style="margin: 0; font-size: 1.25rem;">{{ emp.name }} <small
-                    style="font-size: 0.8rem; color: var(--text-soft); display: block; margin-top: 0.2rem;">{{ emp.work_area
-                    }}</small></h4>
+            <h4 class="team-member-name">{{ emp.name }} <small class="team-member-role">{{ emp.work_area }}</small></h4>
             {% if emp.total_ratings > 0 %}
-            <div style="margin-top: 0.5rem; font-size: 0.95rem; font-weight: 600; color: #f59e0b;">
-                ⭐ {{ '%.1f'|format(emp.average) }} <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-soft);">({{ emp.total_ratings }} u.)</span>
+            <div class="team-member-rating">
+                ⭐ {{ '%.1f'|format(emp.average) }} <span class="team-member-rating-count">({{ emp.total_ratings }} u.)</span>
             </div>
             {% else %}
-            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-soft);">
+            <div class="team-member-new">
                 Nuevo en el equipo
             </div>
             {% endif %}
@@ -47,9 +47,10 @@
 
 <!-- Email Verification Modal placeholder moved to end -->
 
-<section class="card prices-card">
+<section class="card prices-card booking-prices-section">
     <div class="section-heading compact">
         <h3>Precios actuales</h3>
+        <p>Transparencia total en cada servicio y su equivalencia oficial en bolívares.</p>
 
     </div>
 
@@ -77,9 +78,10 @@
     </div>
 </section>
 
-<section class="card">
+<section class="card booking-form-section">
     <div class="section-heading">
         <h3>Formulario de reserva</h3>
+        <p>Completa tus datos, elige método de pago y confirma en un solo flujo.</p>
 
     </div>
 
@@ -129,15 +131,50 @@
                     <option value="">Primero selecciona empleado y fecha</option>
                 </select>
             </label>
+
+            <fieldset class="payment-method-fieldset">
+                <legend class="payment-method-legend">Método de pago</legend>
+                <div class="payment-method-options">
+                    <label class="payment-method-option">
+                        <input type="radio" name="payment_method" value="stripe" data-label="Tarjeta (Stripe - prueba)" required>
+                        <span class="payment-method-card payment-method-card-stripe">
+                            <span class="payment-method-header">
+                                <span class="payment-method-title-row">
+                                    <span class="payment-method-title">Tarjeta</span>
+                                    <span class="stripe-logo-chip payment-method-stripe-chip" aria-hidden="true">
+                                        <span class="stripe-logo-mark">S</span>
+                                        <span class="stripe-logo-word">stripe</span>
+                                    </span>
+                                </span>
+                                <span class="payment-method-badge">Recomendado</span>
+                            </span>
+                        </span>
+                    </label>
+
+                    <label class="payment-method-option">
+                        <input type="radio" name="payment_method" value="manual" data-label="Pago móvil (comprobante manual)">
+                        <span class="payment-method-card payment-method-card-manual">
+                            <span class="payment-method-header">
+                                <span class="payment-method-title">Pago móvil</span>
+                            </span>
+                        </span>
+                    </label>
+                </div>
+            </fieldset>
         </div>
 
-        <button type="button" id="preview-booking-btn">Confirmar reserva</button>
+        <button type="button" id="preview-booking-btn" class="booking-confirm-button">
+            <span class="booking-confirm-text">
+                <span class="booking-confirm-title">Confirmar reserva</span>
+                <span class="booking-confirm-subtitle">Revisa tus datos antes de agendar</span>
+            </span>
+        </button>
 
         <!-- Preview Modal placeholder moved to end -->
     </form>
 </section>
 
-<section class="info-grid">
+<section class="info-grid booking-highlights">
     <article class="info-card">
         <h4>Disponibilidad actualizada</h4>
         <p>Los horarios se refrescan automáticamente para evitar choques de reservas.</p>
@@ -153,44 +190,42 @@
 </section>
 
 <!-- Modales movidos aquí para escapar de contextos aislados -->
-<div id="verify-email-modal"
-    style="display: none; position: fixed; inset: 0; background: rgba(var(--tint-color), 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 3000; justify-content: center; align-items: center;">
-    <div class="card" style="width: 90%; max-width: 400px; margin: 0; position: relative;">
-        <button id="close-modal-btn"
-            style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-soft);">&times;</button>
-        <div class="section-heading compact">
-            <h3>Verifica tu identidad</h3>
+<div id="verify-email-modal" class="app-modal" role="dialog" aria-modal="true" aria-labelledby="verify-email-title">
+    <div class="card app-modal-card app-modal-card-sm">
+        <button id="close-modal-btn" class="app-modal-close" type="button" aria-label="Cerrar modal">&times;</button>
+        <div class="section-heading compact app-modal-heading">
+            <h3 id="verify-email-title">Verifica tu identidad</h3>
             <p>Ingresa el correo electrónico que usaste para agendar tu cita.</p>
         </div>
-        <form id="verify-email-form">
+        <form id="verify-email-form" class="verify-email-form">
             <input type="hidden" id="verify-employee-id" name="employee_id">
-            <label style="display: block; width: 100%;">
-                <input type="email" id="verify-client-email" required placeholder="tu-correo@ejemplo.com"
-                    style="width: 100%; margin-bottom: 1rem;">
+            <label class="app-modal-field">
+                <input type="email" id="verify-client-email" class="app-modal-input" required placeholder="tu-correo@ejemplo.com">
             </label>
-            <button type="submit" style="width: 100%;">Verificar y Calificar</button>
+            <button type="submit" class="app-modal-submit">Verificar y Calificar</button>
         </form>
     </div>
 </div>
 
-<div id="booking-preview-modal" style="display: none; position: fixed; inset: 0; background: rgba(var(--tint-color), 0.5); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 3000; justify-content: center; align-items: center;">
-    <div class="card" style="width: 90%; max-width: 450px; margin: 0; padding: 2rem;">
-        <div class="section-heading compact">
-            <h3>Revisa tu cita</h3>
+<div id="booking-preview-modal" class="app-modal app-modal-strong" role="dialog" aria-modal="true" aria-labelledby="booking-preview-title">
+    <div class="card app-modal-card app-modal-card-md">
+        <div class="section-heading compact app-modal-heading">
+            <h3 id="booking-preview-title">Revisa tu cita</h3>
             <p>Por favor, confirma los datos antes de continuar.</p>
         </div>
-        <div style="background: rgba(var(--tint-color), 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--line-soft);">
-            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+        <div class="booking-preview-box">
+            <ul class="booking-preview-list">
                 <li><strong>Cliente:</strong> <span id="preview-client-name"></span></li>
                 <li><strong>Servicio:</strong> <span id="preview-service-name"></span></li>
                 <li><strong>Barbero:</strong> <span id="preview-employee-name"></span></li>
                 <li><strong>Fecha:</strong> <span id="preview-date"></span></li>
                 <li><strong>Hora:</strong> <span id="preview-time"></span></li>
+                <li><strong>Método de pago:</strong> <span id="preview-payment-method"></span></li>
             </ul>
         </div>
-        <div style="display: flex; gap: 1rem;">
-            <button type="button" id="cancel-preview-btn" style="flex: 1; background: transparent; border: 1px solid var(--line-soft); color: var(--text-main);">Corregir</button>
-            <button type="submit" id="submit-booking-btn" style="flex: 1;">Aceptar y agendar</button>
+        <div class="booking-preview-actions">
+            <button type="button" id="cancel-preview-btn" class="button-ghost">Corregir</button>
+            <button type="button" id="submit-booking-btn" class="booking-preview-submit">Aceptar y agendar</button>
         </div>
     </div>
 </div>
@@ -207,12 +242,8 @@
             card.addEventListener("click", () => {
                 empIdInput.value = card.dataset.employeeId;
                 emailInput.value = "";
-                modal.style.display = "flex";
+                modal.classList.add("is-open");
             });
-
-            
-            card.addEventListener("mouseenter", () => card.style.transform = "translateY(-5px)");
-            card.addEventListener("mouseleave", () => card.style.transform = "translateY(0)");
         });
 
         const serviceSelect = document.getElementById("service_name");
@@ -243,9 +274,9 @@
             }
         });
 
-        closeBtn.addEventListener("click", () => modal.style.display = "none");
+        closeBtn.addEventListener("click", () => modal.classList.remove("is-open"));
         modal.addEventListener("click", (e) => {
-            if (e.target === modal) modal.style.display = "none";
+            if (e.target === modal) modal.classList.remove("is-open");
         });
 
         verifyForm.addEventListener("submit", async (e) => {
@@ -287,6 +318,12 @@
         const previewModal = document.getElementById("booking-preview-modal");
         
         previewBtn.addEventListener("click", () => {
+            const selectedPaymentMethod = bookingForm.querySelector('input[name="payment_method"]:checked');
+            if (!selectedPaymentMethod) {
+                alert("Selecciona un método de pago para continuar.");
+                return;
+            }
+
             if (!bookingForm.checkValidity()) {
                 const firstInvalid = bookingForm.querySelector(":invalid");
                 if (firstInvalid) {
@@ -310,16 +347,32 @@
             document.getElementById("preview-date").textContent = bookingForm.date.value;
             document.getElementById("preview-time").textContent = timeSelectLocal.value;
 
-            previewModal.style.display = "flex";
+            const paymentMethodLabel = selectedPaymentMethod.dataset.label || selectedPaymentMethod.value;
+            document.getElementById("preview-payment-method").textContent = paymentMethodLabel;
+
+            const submitBookingBtn = document.getElementById("submit-booking-btn");
+            submitBookingBtn.textContent = selectedPaymentMethod.value === "stripe"
+                ? "Aceptar e ir a Stripe"
+                : "Aceptar e ir a pago móvil";
+
+            previewModal.classList.add("is-open");
         });
 
         document.getElementById("cancel-preview-btn").addEventListener("click", () => {
-            previewModal.style.display = "none";
+            previewModal.classList.remove("is-open");
         });
 
         document.getElementById("submit-booking-btn").addEventListener("click", () => {
-            previewModal.style.display = "none";
+            previewModal.classList.remove("is-open");
             bookingForm.submit();
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key !== "Escape") {
+                return;
+            }
+            modal.classList.remove("is-open");
+            previewModal.classList.remove("is-open");
         });
     });
 </script>

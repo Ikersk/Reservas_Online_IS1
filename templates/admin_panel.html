@@ -350,7 +350,10 @@
             <input type="hidden" name="filter_date" value="{{ filters.date }}">
             <input type="hidden" name="filter_employee_id" value="{{ filters.employee_id }}">
             <input type="hidden" name="filter_status" value="{{ filters.status }}">
-            <button type="submit" class="button-danger">Limpiar canceladas</button>
+            <button type="submit" class="button-danger btn-with-icon">
+                <span class="btn-icon" aria-hidden="true">⊘</span>
+                <span class="btn-label">Limpiar canceladas</span>
+            </button>
         </form>
 
         <form action="{{ url_for('admin_cleanup_completed_appointments') }}" method="post"
@@ -359,7 +362,10 @@
             <input type="hidden" name="filter_date" value="{{ filters.date }}">
             <input type="hidden" name="filter_employee_id" value="{{ filters.employee_id }}">
             <input type="hidden" name="filter_status" value="{{ filters.status }}">
-            <button type="submit" class="button-secondary">Limpiar atendidas</button>
+            <button type="submit" class="button-secondary btn-with-icon">
+                <span class="btn-icon" aria-hidden="true">⌦</span>
+                <span class="btn-label">Limpiar atendidas</span>
+            </button>
         </form>
     </div>
 
@@ -390,7 +396,10 @@
             </select>
         </label>
         <button type="submit">Filtrar</button>
-        <button type="button" class="button-secondary" onclick="exportCsv()">Exportar CSV</button>
+        <button type="button" class="button-secondary btn-with-icon" onclick="exportCsv()">
+            <span class="btn-icon" aria-hidden="true">⇩</span>
+            <span class="btn-label">Exportar CSV</span>
+        </button>
     </form>
     <script>
     function exportCsv() {
@@ -459,8 +468,14 @@
                             <input type="hidden" name="filter_employee_id" value="{{ filters.employee_id }}">
                             <input type="hidden" name="filter_status" value="{{ filters.status }}">
                             <button type="submit" name="status" value="completed"
-                                class="button-secondary">Atendida</button>
-                            <button type="submit" name="status" value="canceled" class="button-danger">Cancelar</button>
+                                class="button-secondary btn-with-icon">
+                                <span class="btn-icon" aria-hidden="true">✓</span>
+                                <span class="btn-label">Atendida</span>
+                            </button>
+                            <button type="submit" name="status" value="canceled" class="button-danger btn-with-icon">
+                                <span class="btn-icon" aria-hidden="true">✕</span>
+                                <span class="btn-label">Cancelar</span>
+                            </button>
                         </form>
                         {% elif item.status == 'pending_payment' %}
                         <form action="{{ url_for('admin_review_payment', appointment_id=item.id) }}" method="post"
@@ -468,10 +483,14 @@
                             <input type="hidden" name="filter_date" value="{{ filters.date }}">
                             <input type="hidden" name="filter_employee_id" value="{{ filters.employee_id }}">
                             <input type="hidden" name="filter_status" value="{{ filters.status }}">
-                            <button type="submit" name="decision" value="approve" class="button-secondary">Aprobar
-                                pago</button>
-                            <button type="submit" name="decision" value="reject" class="button-danger">Rechazar
-                                pago</button>
+                            <button type="submit" name="decision" value="approve" class="button-secondary btn-with-icon">
+                                <span class="btn-icon" aria-hidden="true">✓</span>
+                                <span class="btn-label">Aprobar pago</span>
+                            </button>
+                            <button type="submit" name="decision" value="reject" class="button-danger btn-with-icon">
+                                <span class="btn-icon" aria-hidden="true">✕</span>
+                                <span class="btn-label">Rechazar pago</span>
+                            </button>
                         </form>
                         {% else %}
                         -

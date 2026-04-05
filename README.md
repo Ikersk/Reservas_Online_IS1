@@ -12,6 +12,7 @@ Este proyecto se centra en ofrecer una experiencia de usuario fluida para los cl
 * **Reservas Inteligentes:** Agendamiento de citas por servicio, profesional, fecha y hora.
 * **Disponibilidad en Tiempo Real:** Validación instantánea de horarios ocupados para evitar choques.
 * **Pasarela de Pago Manual:** Flujo de carga de comprobantes con asignación de estado `pending_payment`.
+* **Pasarela Stripe (Modo Prueba):** Checkout con tarjetas de prueba para confirmar citas sin mover dinero real.
 * **Notificaciones Automatizadas:** Envío de correos electrónicos para confirmación y recordatorios de citas.
 * **Interfaz Adaptable:** Soporte nativo para tema Claro/Oscuro.
 
@@ -35,6 +36,7 @@ Este proyecto se centra en ofrecer una experiencia de usuario fluida para los cl
 * **Tareas en Segundo Plano:** APScheduler (v3.10.4)
 * **Variables de Entorno:** python-dotenv (v1.0.1)
 * **Seguridad y Cifrado:** Flask-Limiter (v3.8.0) para endpoints y `werkzeug.security` (Hashes PBKDF2) para contraseñas de configuración.
+* **Pagos en Prueba:** Stripe Checkout (SDK `stripe`) para pagos simulados con tarjeta.
 
 **Frontend & UI**
 * **Motor de Plantillas:** Jinja2
@@ -69,3 +71,35 @@ Este proyecto se centra en ofrecer una experiencia de usuario fluida para los cl
  ┣ 📜 servicio_recordatorios.py # Tareas en cola automáticas (APScheduler)
  ┗ 📜 setup_windows.bat     # Creador automático del entorno virtual para Windows
 ```
+
+---
+
+## 💳 Stripe en Modo Prueba (Sandbox)
+
+Este proyecto está preparado para usar **Stripe Test Mode**, ideal para demos académicas sin cobros reales.
+
+Variables de entorno requeridas:
+
+```env
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_CURRENCY=usd
+```
+
+Pasos rápidos:
+
+1. Activa el modo de prueba en tu panel de Stripe.
+2. Copia las claves de prueba en tu `.env`.
+3. Instala dependencias con `pip install -r requirements.txt`.
+4. Crea una reserva y abre la página de pago.
+5. Usa el botón de Stripe para completar el checkout de prueba.
+
+Tarjeta de prueba recomendada:
+
+```text
+Número: 4242 4242 4242 4242
+Fecha: cualquier fecha futura
+CVC: cualquier 3 dígitos
+```
+
+Al finalizar el pago de prueba exitosamente, la cita cambia automáticamente de `pending_payment` a `scheduled`.

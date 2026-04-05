@@ -26,31 +26,26 @@
     
     <div class="barber-doodles"></div>
     <header class="site-header">
-        <div class="brand-block" style="position: relative; display: inline-block;">
-            <button id="brand-menu-btn" class="glass-circle-btn"
-                style="border: none; font-size: 1.35rem; font-weight: bold; padding: 12px 24px; display: flex; align-items: center; gap: 0.4rem;">Barbería
-                <span style="font-size: 0.7em; margin-top:0.2em; opacity: 0.7;">▾</span></button>
-            <div id="brand-dropdown"
-                style="display: none; position: absolute; top: calc(100% + 0.8rem); left: 0; background: var(--glass-bg, rgba(255,255,255,0.8)); backdrop-filter: var(--glass-filter, blur(20px)); -webkit-backdrop-filter: var(--glass-filter, blur(20px)); box-shadow: var(--glass-inset), 0 10px 25px rgba(0,0,0,0.15); border-radius: 20px; overflow: hidden; z-index: 50; min-width: 220px; border: var(--glass-border);">
+        <div class="brand-block brand-menu-wrap">
+            <button id="brand-menu-btn" class="glass-circle-btn brand-menu-btn" aria-haspopup="true" aria-expanded="false">
+                Barbería
+                <span class="brand-menu-caret" aria-hidden="true">▾</span>
+            </button>
+            <div id="brand-dropdown" class="brand-dropdown" role="menu">
                 {% if session.get('is_admin') %}
-                <a href="{{ url_for('home') }}"
-                    style="display: block; padding: 1rem 1.25rem; color: var(--text-main, #1e293b); text-decoration: none; border-bottom: 1px solid var(--line-soft, #e2e8f0); font-weight: 600;">Reservas</a>
-                <a href="{{ url_for('admin_dashboard') }}"
-                    style="display: block; padding: 1rem 1.25rem; color: var(--text-main, #1e293b); text-decoration: none; border-bottom: 1px solid var(--line-soft, #e2e8f0); font-weight: 600;">Administración</a>
-                <a href="{{ url_for('admin_logout') }}"
-                    style="display: block; padding: 1rem 1.25rem; color: #ef4444; text-decoration: none; font-weight: 600;">Cerrar
+                <a href="{{ url_for('home') }}" class="brand-dropdown-link" role="menuitem">Reservas</a>
+                <a href="{{ url_for('admin_dashboard') }}" class="brand-dropdown-link" role="menuitem">Administración</a>
+                <a href="{{ url_for('admin_logout') }}" class="brand-dropdown-link brand-dropdown-link-danger" role="menuitem">Cerrar
                     sesión</a>
                 {% else %}
-                <a href="{{ url_for('home') }}"
-                    style="display: block; padding: 1rem 1.25rem; color: var(--text-main, #1e293b); text-decoration: none; border-bottom: 1px solid var(--line-soft, #e2e8f0); font-weight: 600;">Reservas</a>
-                <a href="{{ url_for('admin_login') }}"
-                    style="display: block; padding: 1rem 1.25rem; color: var(--text-main, #1e293b); text-decoration: none; font-weight: 600;">Administración</a>
+                <a href="{{ url_for('home') }}" class="brand-dropdown-link" role="menuitem">Reservas</a>
+                <a href="{{ url_for('admin_login') }}" class="brand-dropdown-link" role="menuitem">Administración</a>
                 {% endif %}
             </div>
         </div>
         <div class="header-actions">
             <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Cambiar tema" title="Modo oscuro"
-                style="font-size: 1.2rem; padding: 0; border: none;">🌙</button>
+                >🌙</button>
         </div>
     </header>
 
@@ -92,13 +87,32 @@
         document.addEventListener('click', (e) => {
             const btn = document.getElementById('brand-menu-btn');
             const drop = document.getElementById('brand-dropdown');
-            if (btn && drop) {
-                if (btn.contains(e.target)) {
-                    drop.style.display = drop.style.display === 'none' ? 'block' : 'none';
-                } else if (!drop.contains(e.target)) {
-                    drop.style.display = 'none';
-                }
+            if (!btn || !drop) {
+                return;
             }
+
+            if (btn.contains(e.target)) {
+                const isOpen = drop.classList.toggle('is-open');
+                btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            } else if (!drop.contains(e.target)) {
+                drop.classList.remove('is-open');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') {
+                return;
+            }
+
+            const btn = document.getElementById('brand-menu-btn');
+            const drop = document.getElementById('brand-dropdown');
+            if (!btn || !drop) {
+                return;
+            }
+
+            drop.classList.remove('is-open');
+            btn.setAttribute('aria-expanded', 'false');
         });
 
         // Auto-dismiss flash alerts after 5 seconds

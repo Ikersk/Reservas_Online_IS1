@@ -2,67 +2,21 @@
 
 {% block title %}Califica tu experiencia{% endblock %}
 
-{% block extra_head %}
-<style>
-    .rating-wrapper {
-        display: flex;
-        flex-direction: row-reverse;
-        justify-content: center;
-        gap: 0.5rem;
-        margin: 1rem 0 2rem;
-    }
-    .rating-wrapper input {
-        display: none;
-    }
-    .rating-wrapper label {
-        font-size: 3.5rem;
-        color: transparent;
-        -webkit-text-stroke: 1.5px var(--text-main);
-        cursor: pointer;
-        transition: all 0.25s ease;
-    }
-    .rating-wrapper input:checked ~ label,
-    .rating-wrapper label:hover,
-    .rating-wrapper label:hover ~ label {
-        color: #f59e0b;
-        -webkit-text-stroke: 1.5px #f59e0b;
-        text-shadow: 0 0 12px rgba(245, 158, 11, 0.45);
-    }
-    .rating-card {
-        max-width: 500px;
-        margin: 0 auto;
-        text-align: center;
-    }
-    .rating-comment {
-        width: 100%;
-        min-height: 100px;
-        margin-bottom: 1rem;
-        padding: 0.75rem;
-        border: 1px solid var(--line-regular);
-        background: rgba(var(--tint-color), 0.05);
-        color: var(--text-main);
-        border-radius: 8px;
-        font-family: inherit;
-        resize: vertical;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<section class="hero">
+<section class="hero rating-hero">
     <span class="section-badge">Feedback</span>
     <h2>Califica tu experiencia</h2>
     <p>Ayúdanos a mejorar contándonos cómo te fue con {{ appointment.employee_name }}.</p>
 </section>
 
 <section class="card rating-card">
-    <div class="section-heading compact" style="text-align: center;">
+    <div class="section-heading compact rating-summary">
         <h3>Servicio de {{ appointment.service_name }}</h3>
         <p>Realizado por <strong>{{ appointment.employee_name }}</strong> a nombre de {{ appointment.client_name }}</p>
     </div>
 
-    <form action="{{ url_for('rate_appointment', token=token) }}" method="post">
-        <h4>¿Cuántas estrellas le das a tu asesor/barbero?</h4>
+    <form action="{{ url_for('rate_appointment', token=token) }}" method="post" class="rating-form">
+        <h4 class="rating-question">¿Cuántas estrellas le das a tu asesor/barbero?</h4>
         
         <div class="rating-wrapper">
             <input type="radio" id="star5" name="rating" value="5" required />
@@ -81,13 +35,13 @@
             <label for="star1" title="1 estrella">★</label>
         </div>
 
-        <label for="comment" style="display:flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 500;">
+        <label for="comment" class="rating-comment-label">
             <span>Comentarios (opcional)</span>
-            <span id="char-count" style="color: var(--text-soft); font-size: 0.85rem; font-weight: 400;">0/{{ max_comment_length }}</span>
+            <span id="char-count" class="rating-char-count">0/{{ max_comment_length }}</span>
         </label>
         <textarea id="comment" name="comment" class="rating-comment" placeholder="¿Qué fue lo que más te gustó? ¿Hay algo que podamos mejorar?" maxlength="{{ max_comment_length }}" oninput="document.getElementById('char-count').innerText = this.value.length + '/' + {{ max_comment_length }}"></textarea>
 
-        <button type="submit" style="width: 100%;">Enviar calificación</button>
+        <button type="submit" class="rating-submit-button">Enviar calificación</button>
     </form>
 </section>
 {% endblock %}

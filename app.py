@@ -8,6 +8,10 @@ from collections import Counter
 from io import StringIO
 from urllib.parse import urlencode
 from werkzeug.security import check_password_hash, generate_password_hash
+try:
+    import stripe
+except ImportError:
+    stripe = None
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session, Response
 from flask_limiter import Limiter
@@ -22,6 +26,9 @@ from configuracion import (
     PAYMENT_REFERENCE_PREFIX,
     PAYMENT_PENDING_MINUTES,
     PAYMENT_PROOF_WINDOW_MINUTES,
+    STRIPE_SECRET_KEY,
+    STRIPE_PUBLISHABLE_KEY,
+    STRIPE_CURRENCY,
     obtener_tasa_bcv_usd,
     get_local_now,
     PATRON_EMAIL,
@@ -56,6 +63,7 @@ from base_datos import (
     get_available_slots,
     create_appointment,
     submit_payment_proof,
+    register_stripe_payment,
     review_payment_submission,
     get_appointment_with_details,
     get_payment_remaining_seconds,
@@ -298,6 +306,108 @@ def _leyenda_colores_empleados(empleados):
     return leyenda
 
 
+# Qué hace: verifica si Stripe está configurado para checkout.
+# Qué valida: presencia de llaves pública/privada y SDK instalado.
+# Qué retorna: `True`/`False`.
+def _stripe_checkout_habilitado():
+    return bool(stripe is not None and STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY)
+
+
+# Qué hace: obtiene precio en USD de un servicio.
+# Qué valida: existencia del servicio en catálogo.
+# Qué retorna: precio en `float` o `0.0`.
+def _obtener_precio_servicio_usd(service_name: str):
+    service_price_lookup = {service.name: float(service.price_usd) for service in get_services()}
+    return float(service_price_lookup.get(service_name, 0.0))
+
+
+# Qué hace: convierte monto USD a centavos para Stripe.
+# Qué valida: valor positivo.
+# Qué retorna: entero de centavos.
+def _usd_a_centavos(amount_usd: float):
+    cents = int(round(float(amount_usd) * 100))
+    return max(cents, 0)
+
+
+# Qué hace: obtiene un valor de objeto Stripe o dict de forma tolerante.
+# Qué valida: acceso por atributo, clave dict y clave indexable.
+# Qué retorna: valor encontrado o `default`.
+def _stripe_value(source, key: str, default=None):
+    if source is None:
+        return default
+
+    if isinstance(source, dict):
+        return source.get(key, default)
+
+    try:
+        value = getattr(source, key)
+    except Exception:
+        value = None
+
+    if value is not None:
+        return value
+
+    try:
+        return source[key]
+    except Exception:
+        return default
+
+
+# Qué hace: extrae un snapshot util del pago en Stripe para guardar en BD.
+# Qué valida: presencia de `payment_intent` y datos de tarjeta cuando Stripe los expone.
+# Qué retorna: diccionario con `last4`, `brand`, `payer_id`, `payment_datetime`.
+def _build_stripe_payment_snapshot(checkout_session, appointment: dict):
+    snapshot = {
+        "last4": "0000",
+        "brand": "CARD",
+        "payer_id": appointment.get("client_email") or "Cliente Stripe",
+        "payment_datetime": get_local_now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    checkout_created_ts = _stripe_value(checkout_session, "created", None)
+    try:
+        if checkout_created_ts:
+            snapshot["payment_datetime"] = datetime.fromtimestamp(int(checkout_created_ts)).strftime("%Y-%m-%d %H:%M:%S")
+    except (TypeError, ValueError, OSError):
+        pass
+
+    payment_intent_ref = _stripe_value(checkout_session, "payment_intent", None)
+    if isinstance(payment_intent_ref, str):
+        payment_intent_id = payment_intent_ref
+    else:
+        payment_intent_id = str(_stripe_value(payment_intent_ref, "id", "") or "")
+
+    if not payment_intent_id:
+        return snapshot
+
+    try:
+        payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id, expand=["latest_charge"])
+    except Exception:
+        app.logger.exception("No se pudo recuperar PaymentIntent de Stripe para enriquecer datos del pago")
+        return snapshot
+
+    intent_created_ts = _stripe_value(payment_intent, "created", None)
+    try:
+        if intent_created_ts:
+            snapshot["payment_datetime"] = datetime.fromtimestamp(int(intent_created_ts)).strftime("%Y-%m-%d %H:%M:%S")
+    except (TypeError, ValueError, OSError):
+        pass
+
+    latest_charge = _stripe_value(payment_intent, "latest_charge", None)
+    payment_method_details = _stripe_value(latest_charge, "payment_method_details", None)
+    card_details = _stripe_value(payment_method_details, "card", None)
+
+    last4 = str(_stripe_value(card_details, "last4", "") or "")
+    if len(last4) == 4 and last4.isdigit():
+        snapshot["last4"] = last4
+
+    brand = str(_stripe_value(card_details, "brand", "") or "").upper()
+    if brand:
+        snapshot["brand"] = brand
+
+    return snapshot
+
+
 # Qué hace: renderiza la página pública de reservas.
 # Qué valida: N/A (consulta datos y construye contexto de vista).
 # Qué retorna: HTML de `inicio.html`.
@@ -386,8 +496,8 @@ def availability():
 
 
 # Qué hace: procesa el formulario y crea una reserva.
-# Qué valida: campos, longitudes, email, fecha/hora y servicio.
-# Qué retorna: redirección a pago (éxito) o a inicio (error) con `flash`.
+# Qué valida: campos, longitudes, email, fecha/hora, servicio y método de pago.
+# Qué retorna: redirección al método de pago elegido (éxito) o a inicio (error) con `flash`.
 @app.post("/book")
 @limiter.limit("10 per minute")
 def book():
@@ -397,9 +507,14 @@ def book():
     employee_id = _normalizar_texto(request.form.get("employee_id", ""))
     date_str = _normalizar_texto(request.form.get("date", ""))
     time_str = _normalizar_texto(request.form.get("time", ""))
+    payment_method = _normalizar_texto(request.form.get("payment_method", "")).lower()
 
-    if not all([client_name, client_email, service_name, employee_id, date_str, time_str]):
+    if not all([client_name, client_email, service_name, employee_id, date_str, time_str, payment_method]):
         flash("Completa todos los campos para reservar.", "error")
+        return redirect(url_for("home"))
+
+    if payment_method not in {"manual", "stripe"}:
+        flash("Selecciona un método de pago válido.", "error")
         return redirect(url_for("home"))
 
     if len(client_name) > MAX_LONGITUD_NOMBRE_CLIENTE:
@@ -445,6 +560,8 @@ def book():
 
     if success:
         flash(message, "success")
+        if payment_method == "stripe":
+            return redirect(url_for("stripe_start_checkout", appointment_id=appointment_id))
         return redirect(url_for("payment_page", appointment_id=appointment_id))
 
     flash(message, "success" if success else "error")
@@ -484,8 +601,7 @@ def payment_page(appointment_id: int):
 
     expires_at = created_at + timedelta(minutes=PAYMENT_PENDING_MINUTES)
     bcv_usd_rate = obtener_tasa_bcv_usd()
-    service_price_lookup = {service.name: float(service.price_usd) for service in get_services()}
-    amount_usd = service_price_lookup.get(appointment["service_name"], 0)
+    amount_usd = _obtener_precio_servicio_usd(appointment["service_name"])
     amount_bcv = round(amount_usd * bcv_usd_rate, 2)
 
     return render_template(
@@ -501,6 +617,7 @@ def payment_page(appointment_id: int):
         payment_amount_usd=amount_usd,
         payment_amount_bcv=amount_bcv,
         bcv_usd_rate=bcv_usd_rate,
+        stripe_checkout_enabled=_stripe_checkout_habilitado(),
         payment_receiver={
             "bank": PAYMENT_RECEIVER_BANK,
             "phone": PAYMENT_RECEIVER_PHONE,
@@ -509,6 +626,192 @@ def payment_page(appointment_id: int):
             "reference": f"{PAYMENT_REFERENCE_PREFIX}-{appointment_id}",
         },
     )
+
+
+# Qué hace: construye redirección a Stripe Checkout para una cita.
+# Qué valida: cita pendiente, vigencia, configuración Stripe y monto del servicio.
+# Qué retorna: redirección al Checkout o a pantalla de pago con error.
+def _stripe_checkout_redirect(appointment_id: int):
+    if not _stripe_checkout_habilitado():
+        flash("Stripe no está configurado. Revisa las llaves de prueba en .env.", "error")
+        return redirect(url_for("payment_page", appointment_id=appointment_id))
+
+    appointment = get_appointment_with_details(appointment_id)
+    if not appointment:
+        flash("No se encontró la cita para procesar pago en Stripe.", "error")
+        return redirect(url_for("home"))
+
+    if appointment["status"] != "pending_payment":
+        flash("Esta cita ya no está pendiente de pago.", "error")
+        return redirect(url_for("home"))
+
+    remaining_seconds = get_payment_remaining_seconds(appointment, PAYMENT_PENDING_MINUTES)
+    if remaining_seconds <= 0:
+        update_appointment_status(appointment_id, "canceled")
+        flash("El tiempo para completar el pago expiró. Reserva nuevamente.", "error")
+        return redirect(url_for("home"))
+
+    amount_usd = _obtener_precio_servicio_usd(appointment["service_name"])
+    amount_cents = _usd_a_centavos(amount_usd)
+    if amount_cents <= 0:
+        flash("No se pudo calcular el monto del servicio para Stripe.", "error")
+        return redirect(url_for("payment_page", appointment_id=appointment_id))
+
+    stripe.api_key = STRIPE_SECRET_KEY
+
+    success_url = (
+        url_for("stripe_payment_success", appointment_id=appointment_id, _external=True)
+        + "?session_id={CHECKOUT_SESSION_ID}"
+    )
+    cancel_url = url_for("payment_page", appointment_id=appointment_id, _external=True)
+
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            customer_email=appointment["client_email"],
+            client_reference_id=str(appointment_id),
+            metadata={
+                "appointment_id": str(appointment_id),
+                "reference": f"{PAYMENT_REFERENCE_PREFIX}-{appointment_id}",
+            },
+            line_items=[
+                {
+                    "quantity": 1,
+                    "price_data": {
+                        "currency": STRIPE_CURRENCY,
+                        "unit_amount": amount_cents,
+                        "product_data": {
+                            "name": f"Cita: {appointment['service_name']}",
+                            "description": f"Con {appointment['employee_name']} ({appointment['appointment_datetime']})",
+                        },
+                    },
+                }
+            ],
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+    except Exception:
+        app.logger.exception("Fallo al crear sesión de Stripe Checkout")
+        flash("No se pudo iniciar el pago con tarjeta en este momento.", "error")
+        return redirect(url_for("payment_page", appointment_id=appointment_id))
+
+    checkout_url = getattr(checkout_session, "url", "")
+    if not checkout_url:
+        flash("Stripe no devolvió una URL de checkout válida.", "error")
+        return redirect(url_for("payment_page", appointment_id=appointment_id))
+
+    return redirect(checkout_url, code=303)
+
+
+# Qué hace: inicia checkout Stripe desde flujo de reserva recién creada.
+# Qué valida: mismas reglas de `_stripe_checkout_redirect`.
+# Qué retorna: redirección a Stripe Checkout o pantalla de pago.
+@app.get("/payment/<int:appointment_id>/stripe/start")
+@limiter.limit("30 per minute")
+def stripe_start_checkout(appointment_id: int):
+    return _stripe_checkout_redirect(appointment_id)
+
+
+# Qué hace: crea sesión de Checkout en Stripe (modo prueba).
+# Qué valida: mismas reglas de `_stripe_checkout_redirect`.
+# Qué retorna: redirección al Checkout o a pantalla de pago con error.
+@app.post("/payment/<int:appointment_id>/stripe/checkout")
+@limiter.limit("15 per minute")
+def stripe_create_checkout_session(appointment_id: int):
+    return _stripe_checkout_redirect(appointment_id)
+
+
+# Qué hace: confirma resultado de pago Stripe y agenda automáticamente la cita.
+# Qué valida: sesión de Stripe pagada, cita asociada y estado pendiente.
+# Qué retorna: redirección a confirmación o a pantalla de pago con error.
+@app.get("/payment/<int:appointment_id>/stripe/success")
+def stripe_payment_success(appointment_id: int):
+    try:
+        if not _stripe_checkout_habilitado():
+            flash("Stripe no está configurado correctamente.", "error")
+            return redirect(url_for("payment_page", appointment_id=appointment_id))
+
+        session_id = _normalizar_texto(request.args.get("session_id", ""))
+        if not session_id:
+            flash("No se recibió identificador de sesión de Stripe.", "error")
+            return redirect(url_for("payment_page", appointment_id=appointment_id))
+
+        appointment = get_appointment_with_details(appointment_id)
+        if not appointment:
+            flash("No se encontró la cita asociada al pago.", "error")
+            return redirect(url_for("home"))
+
+        stripe.api_key = STRIPE_SECRET_KEY
+        try:
+            checkout_session = stripe.checkout.Session.retrieve(session_id)
+        except Exception:
+            app.logger.exception("Fallo al recuperar sesión de Stripe Checkout")
+            flash("No se pudo validar el pago con Stripe.", "error")
+            return redirect(url_for("payment_page", appointment_id=appointment_id))
+
+        metadata = _stripe_value(checkout_session, "metadata", {}) or {}
+        if isinstance(metadata, dict):
+            metadata_appointment_id = str(metadata.get("appointment_id", "") or "")
+        else:
+            metadata_appointment_id = str(_stripe_value(metadata, "appointment_id", "") or "")
+
+        if metadata_appointment_id != str(appointment_id):
+            flash("La sesión de pago no coincide con la cita seleccionada.", "error")
+            return redirect(url_for("payment_page", appointment_id=appointment_id))
+
+        payment_status = str(_stripe_value(checkout_session, "payment_status", "") or "").lower()
+        if payment_status != "paid":
+            flash("El pago no fue confirmado por Stripe.", "error")
+            return redirect(url_for("payment_page", appointment_id=appointment_id))
+
+        expected_amount_cents = _usd_a_centavos(_obtener_precio_servicio_usd(appointment["service_name"]))
+        raw_amount_total = _stripe_value(checkout_session, "amount_total", 0)
+        try:
+            paid_amount_cents = int(raw_amount_total or 0)
+        except (TypeError, ValueError):
+            paid_amount_cents = 0
+
+        if expected_amount_cents <= 0 or paid_amount_cents < expected_amount_cents:
+            flash("El monto recibido no coincide con el monto esperado de la cita.", "error")
+            return redirect(url_for("payment_page", appointment_id=appointment_id))
+
+        if appointment["status"] not in {"pending_payment", "scheduled"}:
+            flash("La cita ya no está pendiente de pago. Contacta a administración.", "error")
+            return redirect(url_for("home"))
+
+        was_pending = appointment["status"] == "pending_payment"
+        payment_snapshot = _build_stripe_payment_snapshot(checkout_session, appointment)
+
+        success, message = register_stripe_payment(
+            appointment_id=appointment_id,
+            payment_last4=payment_snapshot["last4"],
+            payment_brand=payment_snapshot["brand"],
+            payment_payer_id=payment_snapshot["payer_id"],
+            payment_datetime=payment_snapshot["payment_datetime"],
+        )
+        if not success:
+            flash(message, "error")
+            return redirect(url_for("payment_page", appointment_id=appointment_id))
+
+        if was_pending:
+            try:
+                send_reservation_confirmation(
+                    client_email=appointment["client_email"],
+                    client_name=appointment["client_name"],
+                    service_name=appointment["service_name"],
+                    employee_name=appointment["employee_name"],
+                    appointment_datetime=appointment["appointment_datetime"],
+                )
+            except Exception:
+                app.logger.exception("No se pudo enviar correo de confirmación para pago Stripe")
+
+        flash(message, "success")
+        return redirect(url_for("booking_success", appointment_id=appointment_id))
+    except Exception:
+        app.logger.exception("Error inesperado procesando retorno de Stripe")
+        flash("Ocurrió un problema al procesar el pago con Stripe. Intenta nuevamente.", "error")
+        return redirect(url_for("payment_page", appointment_id=appointment_id))
 
 
 # Qué hace: registra comprobante de pago móvil.

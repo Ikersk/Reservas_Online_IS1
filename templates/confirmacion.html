@@ -3,9 +3,9 @@
 {% block title %}Reserva Confirmada{% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: center; align-items: center; min-height: 60vh; padding: 2rem 1rem;">
-    <div class="card" style="text-align: center; max-width: 500px; width: 100%;">
-        <div style="font-size: 4rem; color: #10b981; margin-bottom: 1rem; line-height: 1;">
+<section class="confirmation-layout">
+    <div class="card confirmation-card">
+        <div class="confirmation-icon {% if appointment.status == 'scheduled' %}is-success{% else %}is-pending{% endif %}">
             {% if appointment.status == 'scheduled' %}
             ✅
             {% else %}
@@ -13,7 +13,7 @@
             {% endif %}
         </div>
         
-        <h2 style="margin: 0 0 0.5rem 0; font-size: 1.75rem;">
+        <h2 class="confirmation-title">
             {% if appointment.status == 'scheduled' %}
             ¡Tu cita está agendada!
             {% else %}
@@ -21,7 +21,7 @@
             {% endif %}
         </h2>
         
-        <p style="color: var(--text-soft); font-size: 1.1rem; margin-bottom: 2rem;">
+        <p class="confirmation-subtitle">
             {% if appointment.status == 'scheduled' %}
             Te esperamos en la fecha y hora indicadas.
             {% else %}
@@ -29,28 +29,28 @@
             {% endif %}
         </p>
 
-        <div style="background: rgba(var(--tint-color), 0.05); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--line-soft); text-align: left; margin-bottom: 2rem;">
-            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem;">
-                <li><strong style="display: inline-block; width: 90px; color: var(--text-soft);">Cliente:</strong> {{ appointment.client_name }}</li>
-                <li><strong style="display: inline-block; width: 90px; color: var(--text-soft);">Servicio:</strong> {{ appointment.service_name }}</li>
-                <li><strong style="display: inline-block; width: 90px; color: var(--text-soft);">Barbero:</strong> {{ appointment.employee_name }}</li>
-                <li><strong style="display: inline-block; width: 90px; color: var(--text-soft);">Fecha/Hora:</strong> {{ appointment.appointment_datetime }}</li>
+        <div class="confirmation-details">
+            <ul class="confirmation-list">
+                <li><strong class="confirmation-label">Cliente:</strong> <span>{{ appointment.client_name }}</span></li>
+                <li><strong class="confirmation-label">Servicio:</strong> <span>{{ appointment.service_name }}</span></li>
+                <li><strong class="confirmation-label">Barbero:</strong> <span>{{ appointment.employee_name }}</span></li>
+                <li><strong class="confirmation-label">Fecha/Hora:</strong> <span>{{ appointment.appointment_datetime }}</span></li>
                 <li>
-                    <strong style="display: inline-block; width: 90px; color: var(--text-soft);">Estado:</strong>
+                    <strong class="confirmation-label">Estado:</strong>
                     {% if appointment.status == 'pending_payment' %}
-                    <span style="color: #f59e0b; font-weight: 500;">Pendiente de pago</span>
+                    <span class="confirmation-status is-pending">Pendiente de pago</span>
                     {% elif appointment.status == 'scheduled' %}
-                    <span style="color: #10b981; font-weight: 500;">Agendada</span>
+                    <span class="confirmation-status is-scheduled">Agendada</span>
                     {% elif appointment.status == 'completed' %}
-                    <span style="color: var(--primary-color); font-weight: 500;">Completada</span>
+                    <span class="confirmation-status is-completed">Completada</span>
                     {% else %}
-                    <span style="color: #ef4444; font-weight: 500;">Cancelada</span>
+                    <span class="confirmation-status is-canceled">Cancelada</span>
                     {% endif %}
                 </li>
             </ul>
         </div>
         
-        <a href="{{ url_for('home') }}" class="button-primary" style="display: inline-block; text-decoration: none;">Volver a Inicio</a>
+        <a href="{{ url_for('home') }}" class="button-primary confirmation-home-link">Volver a Inicio</a>
     </div>
-</div>
+</section>
 {% endblock %}

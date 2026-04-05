@@ -3,16 +3,16 @@
 {% block title %}Registrar pago{% endblock %}
 
 {% block content %}
-<section class="hero">
-    <span class="section-badge">Pago móvil</span>
+<section class="hero payment-hero">
+    <span class="section-badge">Pasarela de pago</span>
     <h2>Completa el pago para confirmar tu cita</h2>
-    
+    <p>Transfiere el monto indicado y registra tu comprobante dentro del tiempo disponible.</p>
 </section>
 
-<section class="card">
+<section class="card payment-page-card">
     <div class="section-heading compact">
         <h3>Datos para realizar el pago</h3>
-        
+        <p>Usa estos datos de destino y copia con un toque cada referencia.</p>
     </div>
 
     <div class="payment-timer-card" id="payment-timer" data-remaining-seconds="{{ payment_remaining_seconds }}" data-expired-redirect-url="{{ url_for('payment_page', appointment_id=appointment.id) }}">
@@ -21,17 +21,17 @@
         <small>Dispones de {{ payment_pending_minutes }} minutos desde la creación de la reserva. Si el tiempo termina, la cita se libera automáticamente y deberás reservar de nuevo.</small>
     </div>
 
-    <div class="info-grid">
-        <article class="info-card" style="cursor: pointer;" onclick="copyToClipboard(this.querySelector('span.copy-badge'), '{{ payment_receiver.bank }}')">
-            <h4>Banco receptor <span class="copy-badge" style="float: right; font-size: 0.85rem;" title="Copiar">📋</span></h4>
+    <div class="info-grid payment-info-grid">
+        <article class="info-card copyable-info-card" onclick="copyToClipboard(this.querySelector('span.copy-badge'), '{{ payment_receiver.bank }}')">
+            <h4>Banco receptor <span class="copy-badge" title="Copiar">📋</span></h4>
             <p>{{ payment_receiver.bank }}</p>
         </article>
-        <article class="info-card" style="cursor: pointer;" onclick="copyToClipboard(this.querySelector('span.copy-badge'), '{{ payment_receiver.phone }}')">
-            <h4>Teléfono receptor <span class="copy-badge" style="float: right; font-size: 0.85rem;" title="Copiar">📋</span></h4>
+        <article class="info-card copyable-info-card" onclick="copyToClipboard(this.querySelector('span.copy-badge'), '{{ payment_receiver.phone }}')">
+            <h4>Teléfono receptor <span class="copy-badge" title="Copiar">📋</span></h4>
             <p>{{ payment_receiver.phone }}</p>
         </article>
-        <article class="info-card" style="cursor: pointer;" onclick="copyToClipboard(this.querySelector('span.copy-badge'), '{{ payment_receiver.id }}')">
-            <h4>Cédula / RIF <span class="copy-badge" style="float: right; font-size: 0.85rem;" title="Copiar">📋</span></h4>
+        <article class="info-card copyable-info-card" onclick="copyToClipboard(this.querySelector('span.copy-badge'), '{{ payment_receiver.id }}')">
+            <h4>Cédula / RIF <span class="copy-badge" title="Copiar">📋</span></h4>
             <p>{{ payment_receiver.id }}</p>
         </article>
         <article class="info-card">
@@ -56,7 +56,7 @@
 
     <div class="section-heading compact section-heading-spaced">
         <h3>Registrar comprobante</h3>
-        
+        <p>Completa estos datos exactamente como aparecen en tu transferencia.</p>
     </div>
 
     <form action="{{ url_for('payment_submit', appointment_id=appointment.id) }}" method="post" class="form-grid" id="payment-proof-form">
@@ -77,8 +77,8 @@
 
         <label>
             Teléfono emisor
-            <div style="display: flex; gap: 0.5rem; width: 100%;">
-                <select name="payment_phone_prefix" required style="flex: 0 0 35%; min-width: 0; padding-left: 0.5rem; padding-right: 0.5rem;">
+            <div class="split-input-row split-input-row-phone">
+                <select name="payment_phone_prefix" class="split-prefix-select" required>
                     <option value="">Prefijo</option>
                     <option value="0414">0414</option>
                     <option value="0424">0424</option>
@@ -87,31 +87,31 @@
                     <option value="0416">0416</option>
                     <option value="0426">0426</option>
                 </select>
-                <input type="text" name="payment_phone_digits" maxlength="7" minlength="7" inputmode="numeric" pattern="\d{7}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,7);" placeholder="1234567" title="Ingresa 7 dígitos numéricos" required style="flex: 1; min-width: 0;">
+                <input type="text" name="payment_phone_digits" class="split-main-input" maxlength="7" minlength="7" inputmode="numeric" pattern="\d{7}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,7);" placeholder="1234567" title="Ingresa 7 dígitos numéricos" required>
             </div>
         </label>
 
         <label>
             Cédula emisor
-            <div style="display: flex; gap: 0.5rem; width: 100%;">
-                <select name="payment_payer_id_prefix" required style="flex: 0 0 25%; min-width: 0; padding-left: 0.5rem; padding-right: 0.5rem;">
+            <div class="split-input-row split-input-row-id">
+                <select name="payment_payer_id_prefix" class="split-prefix-select" required>
                     <option value="V">V</option>
                     <option value="E">E</option>
                 </select>
-                <input type="text" name="payment_payer_id_digits" maxlength="8" pattern="\d{1,8}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,8);" placeholder="12345678" title="Ingresa hasta 8 dígitos numéricos" required style="flex: 1; min-width: 0;">
+                <input type="text" name="payment_payer_id_digits" class="split-main-input" maxlength="8" pattern="\d{1,8}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,8);" placeholder="12345678" title="Ingresa hasta 8 dígitos numéricos" required>
             </div>
         </label>
 
         <label>
             Fecha y hora de la transferencia
-            <div style="display: flex; gap: 0.5rem; width: 100%;">
-                <input type="text" name="payment_date" id="payment_date" placeholder="AÑO-MES-DÍA" min="{{ payment_datetime_min[:10] }}" max="{{ payment_datetime_max[:10] }}" required style="flex: 1; min-width: 0; cursor: pointer;">
-                <input type="text" name="payment_time" id="payment_time" placeholder="HH:MM" required style="flex: 1; min-width: 0; cursor: pointer;">
+            <div class="split-input-row split-input-row-datetime">
+                <input type="text" name="payment_date" id="payment_date" class="split-main-input payment-picker-input" placeholder="AÑO-MES-DÍA" min="{{ payment_datetime_min[:10] }}" max="{{ payment_datetime_max[:10] }}" required>
+                <input type="text" name="payment_time" id="payment_time" class="split-main-input payment-picker-input" placeholder="HH:MM" required>
             </div>
         </label>
 
         <div class="payment-submit-wrapper">
-            <button type="submit" id="payment-submit-button">Enviar comprobante</button>
+            <button type="submit" id="payment-submit-button" class="payment-submit-button">Enviar comprobante</button>
         </div>
     </form>
 </section>

@@ -68,6 +68,9 @@ if not exist ".env" (
         echo PAYMENT_REFERENCE_PREFIX=CITA>> .env
         echo PAYMENT_PENDING_MINUTES=5>> .env
         echo PAYMENT_PROOF_WINDOW_MINUTES=5>> .env
+        echo STRIPE_SECRET_KEY=>> .env
+        echo STRIPE_PUBLISHABLE_KEY=>> .env
+        echo STRIPE_CURRENCY=usd>> .env
         echo BCV_USD_RATE=36.50>> .env
         echo Se creo .env con valores base.
     )
