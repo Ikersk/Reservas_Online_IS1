@@ -66,7 +66,8 @@ if not exist ".env" (
         echo PAYMENT_RECEIVER_ID=V-00000000>> .env
         echo PAYMENT_RECEIVER_NAME=Barberia>> .env
         echo PAYMENT_REFERENCE_PREFIX=CITA>> .env
-        echo PAYMENT_PENDING_MINUTES=10>> .env
+        echo PAYMENT_PENDING_MINUTES=5>> .env
+        echo PAYMENT_PROOF_WINDOW_MINUTES=5>> .env
         echo BCV_USD_RATE=36.50>> .env
         echo Se creo .env con valores base.
     )

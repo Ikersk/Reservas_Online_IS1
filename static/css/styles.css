@@ -697,7 +697,7 @@ button:hover {
 
 .admin-sidebar {
     position: sticky;
-    top: 92px;
+    top: 0px;
     display: grid;
     gap: 8px;
     border: 1px solid rgba(15, 23, 42, 0.08);
