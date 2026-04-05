@@ -1,6 +1,4 @@
-import os
 from datetime import datetime, timedelta
-from hmac import compare_digest
 import re
 import csv
 import unicodedata
@@ -443,11 +441,41 @@ def _build_stripe_payment_snapshot(checkout_session, appointment: dict):
     return snapshot
 
 
+# Qué hace: renderiza la landing page pública del negocio.
+# Qué valida: N/A (consulta datos para contexto visual).
+# Qué retorna: HTML de `landing.html`.
+@app.route("/")
+def landing():
+    employees = get_employees()
+    services = get_services()
+    bcv_usd_rate = obtener_tasa_bcv_usd()
+    price_board = [
+        {
+            "service_name": service.name,
+            "duration": service.duration_minutes,
+            "price_usd": float(service.price_usd),
+            "price_bcv": round(float(service.price_usd) * bcv_usd_rate, 2),
+        }
+        for service in services
+    ]
+    employee_ratings_list = get_public_employee_ratings()
+    employee_ratings_dict = {rating["id"]: rating for rating in employee_ratings_list}
+
+    return render_template(
+        "landing.html",
+        employees=employees,
+        services=[service.name for service in services],
+        bcv_usd_rate=bcv_usd_rate,
+        price_board=price_board,
+        employee_ratings=employee_ratings_dict,
+    )
+
+
 # Qué hace: renderiza la página pública de reservas.
 # Qué valida: N/A (consulta datos y construye contexto de vista).
 # Qué retorna: HTML de `inicio.html`.
-@app.route("/")
-def home():
+@app.route("/reservar")
+def booking_page():
     employees = get_employees()
     services = get_services()
     bcv_usd_rate = obtener_tasa_bcv_usd()
@@ -546,28 +574,28 @@ def book():
 
     if not all([client_name, client_email, service_name, employee_id, date_str, time_str, payment_method]):
         flash("Completa todos los campos para reservar.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     if payment_method not in {"manual", "stripe"}:
         flash("Selecciona un método de pago válido.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     if len(client_name) > MAX_LONGITUD_NOMBRE_CLIENTE:
         flash("El nombre del cliente es demasiado largo.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     if not _nombre_persona_valido(client_name):
         flash("El nombre del cliente es inválido. Usa letras reales y evita repeticiones excesivas.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     if not _email_valido(client_email):
         flash("El correo del cliente es inválido.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     services = get_services()
     if service_name not in [s.name for s in services]:
         flash("Servicio inválido.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     try:
         employee_id_int = int(employee_id)
@@ -577,12 +605,12 @@ def book():
         _parsear_hora(time_str)
     except ValueError:
         flash("Fecha u hora inválida.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     is_valid_booking_date, booking_date_msg = _validar_fecha_agendamiento(date_str)
     if not is_valid_booking_date:
         flash(booking_date_msg, "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     success, message, appointment_id = create_appointment(
         client_name=client_name,
@@ -600,7 +628,7 @@ def book():
         return redirect(url_for("payment_page", appointment_id=appointment_id))
 
     flash(message, "success" if success else "error")
-    return redirect(url_for("home"))
+    return redirect(url_for("landing"))
 
 
 # Qué hace: muestra la página de pago de una cita.
@@ -612,27 +640,27 @@ def payment_page(appointment_id: int):
 
     if not appointment:
         flash("No se encontró la cita para registrar pago.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     if appointment["status"] == "pending_payment":
         remaining_seconds = get_payment_remaining_seconds(appointment, PAYMENT_PENDING_MINUTES)
         if remaining_seconds <= 0:
             update_appointment_status(appointment_id, "canceled")
             flash("El tiempo para completar el pago expiró. Reserva nuevamente.", "error")
-            return redirect(url_for("home"))
+            return redirect(url_for("landing"))
     else:
         remaining_seconds = 0
 
     if appointment["status"] != "pending_payment":
         flash("Esta cita ya no está pendiente de pago.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     try:
         created_at = datetime.strptime(appointment["created_at"], "%Y-%m-%d %H:%M:%S")
     except (TypeError, ValueError):
         update_appointment_status(appointment_id, "canceled")
         flash("La cita tiene datos inválidos y fue cancelada por seguridad.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     expires_at = created_at + timedelta(minutes=PAYMENT_PENDING_MINUTES)
     bcv_usd_rate = obtener_tasa_bcv_usd()
@@ -674,17 +702,17 @@ def _stripe_checkout_redirect(appointment_id: int):
     appointment = get_appointment_with_details(appointment_id)
     if not appointment:
         flash("No se encontró la cita para procesar pago en Stripe.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     if appointment["status"] != "pending_payment":
         flash("Esta cita ya no está pendiente de pago.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     remaining_seconds = get_payment_remaining_seconds(appointment, PAYMENT_PENDING_MINUTES)
     if remaining_seconds <= 0:
         update_appointment_status(appointment_id, "canceled")
         flash("El tiempo para completar el pago expiró. Reserva nuevamente.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     amount_usd = _obtener_precio_servicio_usd(appointment["service_name"])
     amount_cents = _usd_a_centavos(amount_usd)
@@ -775,7 +803,7 @@ def stripe_payment_success(appointment_id: int):
         appointment = get_appointment_with_details(appointment_id)
         if not appointment:
             flash("No se encontró la cita asociada al pago.", "error")
-            return redirect(url_for("home"))
+            return redirect(url_for("landing"))
 
         stripe.api_key = STRIPE_SECRET_KEY
         try:
@@ -813,7 +841,7 @@ def stripe_payment_success(appointment_id: int):
 
         if appointment["status"] not in {"pending_payment", "scheduled"}:
             flash("La cita ya no está pendiente de pago. Contacta a administración.", "error")
-            return redirect(url_for("home"))
+            return redirect(url_for("landing"))
 
         was_pending = appointment["status"] == "pending_payment"
         payment_snapshot = _build_stripe_payment_snapshot(checkout_session, appointment)
@@ -918,7 +946,7 @@ def booking_success(appointment_id: int):
     appointment = get_appointment_with_details(appointment_id)
     if not appointment:
         flash("No se encontró la cita solicitada.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
     return render_template("confirmacion.html", appointment=appointment)
 
 
@@ -1709,11 +1737,11 @@ def rate_appointment(token: str):
     appointment = get_appointment_by_rating_token(token)
     if not appointment:
         flash("El enlace de calificación es inválido o la cita no existe.", "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
     
     if appointment["rating"] is not None:
         flash("Ya has calificado este servicio. ¡Gracias por tu opinión!", "success")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     if request.method == "POST":
         rating_val = _normalizar_texto(request.form.get("rating", ""))
@@ -1726,7 +1754,7 @@ def rate_appointment(token: str):
 
         success, msg = submit_appointment_rating(token, rating_int, comment_val)
         flash(msg, "success" if success else "error")
-        return redirect(url_for("home"))
+        return redirect(url_for("landing"))
 
     return render_template(
         "calificar.html",
@@ -1752,7 +1780,7 @@ def rate_limit_exceeded(_error):
     flash("Demasiados intentos. Espera un momento e inténtalo nuevamente.", "error")
     if request.path.startswith("/admin/login"):
         return redirect(url_for("admin_login"))
-    return redirect(request.referrer or url_for("home"))
+    return redirect(request.referrer or url_for("landing"))
 
 
 if __name__ == "__main__":

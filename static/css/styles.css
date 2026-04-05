@@ -42,17 +42,13 @@ body {
     text-rendering: optimizeLegibility;
 }
 
-@keyframes swirl {
+@keyframes linesDrift {
     0% {
-        transform: rotate(0deg) scale(1);
-    }
-
-    50% {
-        transform: rotate(180deg) scale(1.2);
+        background-position: 0 0;
     }
 
     100% {
-        transform: rotate(360deg) scale(1);
+        background-position: 120px 120px;
     }
 }
 
@@ -60,27 +56,33 @@ body::before,
 body::after {
     content: "";
     position: fixed;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
+    inset: -40%;
     pointer-events: none;
     z-index: -1;
-    animation: swirl 45s linear infinite;
+    animation: linesDrift 80s linear infinite;
+    background-size: 120px 120px;
 }
 
 body::before {
-    background: radial-gradient(circle at 40% 30%, rgba(37, 99, 235, 0.12) 0%, transparent 35%),
-        radial-gradient(circle at 80% 60%, rgba(138, 124, 247, 0.15) 0%, transparent 40%),
-        radial-gradient(circle at 20% 80%, rgba(236, 72, 153, 0.08) 0%, transparent 45%);
+    opacity: 0.85;
+    background-image: repeating-linear-gradient(
+        135deg,
+        rgba(220, 38, 38, 0.22) 0 10px,
+        rgba(248, 250, 252, 0.78) 10px 20px,
+        rgba(30, 58, 138, 0.22) 20px 30px,
+        rgba(248, 250, 252, 0.78) 30px 40px
+    );
 }
 
 body::after {
-    animation-duration: 65s;
+    opacity: 0.38;
+    animation-duration: 140s;
     animation-direction: reverse;
-    background: radial-gradient(circle at 70% 20%, rgba(14, 165, 233, 0.12) 0%, transparent 40%),
-        radial-gradient(circle at 30% 70%, rgba(56, 189, 248, 0.1) 0%, transparent 45%),
-        radial-gradient(circle at 90% 90%, rgba(244, 114, 182, 0.08) 0%, transparent 35%);
+    background-image: repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.28) 0 8px,
+        rgba(148, 163, 184, 0.12) 8px 16px
+    );
 }
 
 
@@ -1191,10 +1193,13 @@ body::after {
 .payment-method-fieldset {
     grid-column: 1 / -1;
     margin: 0;
-    padding: 12px;
-    border: 1px solid rgba(148, 163, 184, 0.32);
-    border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.42);
+    padding: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .payment-method-legend {
@@ -1228,9 +1233,9 @@ body::after {
     align-items: center;
     min-height: 62px;
     padding: 14px 44px 14px 14px;
-    border: 1px solid rgba(148, 163, 184, 0.38);
+    border: 1px solid rgba(148, 163, 184, 0.24);
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.88);
     transition: transform 0.16s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
     cursor: pointer;
 }
@@ -1243,7 +1248,7 @@ body::after {
     height: 18px;
     border-radius: 50%;
     border: 2px solid rgba(100, 116, 139, 0.58);
-    background: rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.92);
     transition: border-color 0.18s ease, background 0.18s ease;
 }
 
@@ -1257,7 +1262,7 @@ body::after {
 
 .payment-method-option:hover .payment-method-card {
     transform: translateY(-1px);
-    border-color: rgba(59, 130, 246, 0.42);
+    border-color: rgba(59, 130, 246, 0.3);
     box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
 }
 
@@ -1268,8 +1273,8 @@ body::after {
 }
 
 .payment-method-option input[type="radio"]:checked + .payment-method-card {
-    border-color: rgba(37, 99, 235, 0.7);
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(14, 165, 233, 0.12));
+    border-color: rgba(37, 99, 235, 0.46);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(14, 165, 233, 0.08));
     box-shadow: 0 10px 26px rgba(37, 99, 235, 0.16);
 }
 
@@ -2588,15 +2593,23 @@ html[data-theme="dark"] body {
 }
 
 html[data-theme="dark"] body::before {
-    background: radial-gradient(circle at 40% 30%, rgba(138, 124, 247, 0.35) 0%, transparent 45%),
-        radial-gradient(circle at 80% 50%, rgba(30, 64, 175, 0.4) 0%, transparent 45%),
-        radial-gradient(circle at 30% 80%, rgba(139, 92, 246, 0.3) 0%, transparent 40%);
+    opacity: 0.9;
+    background-image: repeating-linear-gradient(
+        135deg,
+        rgba(248, 113, 113, 0.34) 0 10px,
+        rgba(15, 23, 42, 0.92) 10px 20px,
+        rgba(96, 165, 250, 0.34) 20px 30px,
+        rgba(15, 23, 42, 0.92) 30px 40px
+    );
 }
 
 html[data-theme="dark"] body::after {
-    background: radial-gradient(circle at 70% 30%, rgba(99, 102, 241, 0.35) 0%, transparent 50%),
-        radial-gradient(circle at 30% 70%, rgba(22, 163, 74, 0.3) 0%, transparent 45%),
-        radial-gradient(circle at 80% 80%, rgba(56, 189, 248, 0.25) 0%, transparent 40%);
+    opacity: 0.34;
+    background-image: repeating-linear-gradient(
+        135deg,
+        rgba(148, 163, 184, 0.2) 0 8px,
+        rgba(15, 23, 42, 0.05) 8px 16px
+    );
 }
 
 html[data-theme="dark"] .site-header {
@@ -3011,8 +3024,9 @@ html[data-theme="dark"] select option {
 }
 
 html[data-theme="dark"] .payment-method-fieldset {
-    border-color: rgba(148, 163, 184, 0.32);
-    background: rgba(15, 23, 42, 0.25);
+    border-color: rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.72);
+    box-shadow: 0 10px 24px rgba(2, 6, 23, 0.28);
 }
 
 html[data-theme="dark"] .payment-method-legend {
@@ -3020,13 +3034,13 @@ html[data-theme="dark"] .payment-method-legend {
 }
 
 html[data-theme="dark"] .payment-method-card {
-    border-color: rgba(148, 163, 184, 0.36);
-    background: rgba(30, 41, 59, 0.35);
+    border-color: rgba(148, 163, 184, 0.24);
+    background: rgba(15, 23, 42, 0.84);
 }
 
 html[data-theme="dark"] .payment-method-card::after {
     border-color: rgba(148, 163, 184, 0.58);
-    background: rgba(30, 41, 59, 0.75);
+    background: rgba(30, 41, 59, 0.9);
 }
 
 html[data-theme="dark"] .payment-method-card-stripe {
@@ -3038,13 +3052,13 @@ html[data-theme="dark"] .payment-method-card-manual {
 }
 
 html[data-theme="dark"] .payment-method-option:hover .payment-method-card {
-    border-color: rgba(96, 165, 250, 0.45);
+    border-color: rgba(96, 165, 250, 0.32);
     box-shadow: 0 12px 24px rgba(2, 6, 23, 0.45);
 }
 
 html[data-theme="dark"] .payment-method-option input[type="radio"]:checked + .payment-method-card {
-    border-color: rgba(96, 165, 250, 0.72);
-    background: linear-gradient(135deg, rgba(30, 64, 175, 0.36), rgba(6, 95, 70, 0.28));
+    border-color: rgba(96, 165, 250, 0.48);
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.22), rgba(6, 95, 70, 0.18));
 }
 
 html[data-theme="dark"] .payment-method-option input[type="radio"]:checked + .payment-method-card::after {
@@ -3857,41 +3871,49 @@ body {
     background: linear-gradient(180deg, #f7fafc 0%, #eff5ff 48%, #edf3fb 100%);
 }
 
-body::before,
-body::after {
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    opacity: 0.9;
-    animation: swirl 32s linear infinite !important;
+/*
+  BARBER POLE MATH:
+  Gradient angle: 135deg  — stripes run diagonally (\ direction)
+  Stripe period T = 4 × 26px = 104px  (red | white | blue | white)
+  For a seamless Y-axis scroll on a 135deg gradient:
+    Y offset = T × √2 = 104 × 1.4142 ≈ 147px
+  Moving only the Y axis makes the \ stripes appear to scroll downward
+  — exactly the barber pole spin illusion.
+  ONE layer only: two opposing layers create moiré / interference.
+*/
+
+@keyframes barberPoleFlow {
+    from { background-position: center 0; }
+    to   { background-position: center 147px; }
 }
 
 body::before {
-    background:
-        radial-gradient(circle at 50% 34%, rgba(37, 99, 235, 0.2) 0%, transparent 38%),
-        radial-gradient(circle at 62% 56%, rgba(14, 165, 233, 0.18) 0%, transparent 42%),
-        radial-gradient(circle at 38% 68%, rgba(45, 212, 191, 0.14) 0%, transparent 44%),
-        radial-gradient(circle at 50% 52%, rgba(59, 130, 246, 0.12) 0%, transparent 40%);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    animation: barberPoleFlow 6s linear infinite !important;
+    background-image: repeating-linear-gradient(
+        135deg,
+        rgba(220, 38, 38, 0.20)  0px  26px,
+        rgba(255, 255, 255, 0.22) 26px 52px,
+        rgba(37, 99, 235, 0.18)  52px 78px,
+        rgba(255, 255, 255, 0.22) 78px 104px
+    );
+    /* background-size Y must equal the seamless offset (147px) */
+    background-size: 200px 147px;
 }
 
 body::after {
-    animation-duration: 46s !important;
-    animation-direction: reverse;
-    background:
-        radial-gradient(circle at 56% 30%, rgba(56, 189, 248, 0.2) 0%, transparent 44%),
-        radial-gradient(circle at 42% 66%, rgba(59, 130, 246, 0.14) 0%, transparent 46%),
-        radial-gradient(circle at 64% 74%, rgba(148, 163, 184, 0.12) 0%, transparent 48%),
-        radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.1) 0%, transparent 42%);
+    /* Second pseudo-element: kept transparent to avoid moiré */
+    animation: none !important;
+    background: none !important;
+    opacity: 0 !important;
 }
 
 .barber-doodles {
-    display: block !important;
-    opacity: 0.24;
-    filter: grayscale(1) contrast(340%);
-    mix-blend-mode: overlay;
-    animation: drift-bg 85s linear infinite;
-    background-position: center center;
+    display: none !important;
 }
 
 h1,
@@ -4205,20 +4227,21 @@ html[data-theme="dark"] body {
 }
 
 html[data-theme="dark"] body::before {
-    opacity: 0.96;
-    background:
-        radial-gradient(circle at 44% 34%, rgba(59, 130, 246, 0.38) 0%, transparent 44%),
-        radial-gradient(circle at 60% 40%, rgba(14, 165, 233, 0.28) 0%, transparent 46%),
-        radial-gradient(circle at 40% 66%, rgba(20, 184, 166, 0.22) 0%, transparent 48%),
-        radial-gradient(circle at 52% 52%, rgba(37, 99, 235, 0.2) 0%, transparent 42%);
+    opacity: 0.88;
+    background-image: repeating-linear-gradient(
+        135deg,
+        rgba(248, 113, 113, 0.28)  0px  26px,
+        rgba(15,  23,  42,  0.10)  26px 52px,
+        rgba(96,  165, 250, 0.28)  52px 78px,
+        rgba(15,  23,  42,  0.10)  78px 104px
+    );
+    background-size: 200px 147px;
 }
 
 html[data-theme="dark"] body::after {
-    opacity: 0.9;
-    background:
-        radial-gradient(circle at 58% 68%, rgba(56, 189, 248, 0.25) 0%, transparent 49%),
-        radial-gradient(circle at 48% 52%, rgba(71, 85, 105, 0.28) 0%, transparent 50%),
-        radial-gradient(circle at 52% 44%, rgba(14, 165, 233, 0.18) 0%, transparent 44%);
+    animation: none !important;
+    background: none !important;
+    opacity: 0 !important;
 }
 
 html[data-theme="dark"] .site-header {
@@ -4240,9 +4263,7 @@ html[data-theme="dark"] .brand-dropdown {
 }
 
 html[data-theme="dark"] .barber-doodles {
-    opacity: 0.22;
-    filter: grayscale(1) invert(1) contrast(280%);
-    mix-blend-mode: overlay;
+    display: none !important;
 }
 
 html[data-theme="dark"] .brand-dropdown-link {
@@ -4394,6 +4415,29 @@ html[data-theme="dark"] .admin-security-dropdown[open] .admin-security-summary {
 html[data-theme="dark"] .site-footer {
     background: rgba(15, 23, 42, 0.5);
     border-top-color: var(--line-minimal);
+}
+
+/* Employee portal modules: solid backgrounds (no gradients/transparency) */
+.employee-overview-card,
+.employee-kpi,
+.employee-panel-card,
+.employee-table-wrapper,
+#employee-calendar,
+.employee-empty-state {
+    background: #f8fafc !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+html[data-theme="dark"] .employee-overview-card,
+html[data-theme="dark"] .employee-kpi,
+html[data-theme="dark"] .employee-panel-card,
+html[data-theme="dark"] .employee-table-wrapper,
+html[data-theme="dark"] #employee-calendar,
+html[data-theme="dark"] .employee-empty-state {
+    background: #111827 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
 @media (max-width: 780px) {

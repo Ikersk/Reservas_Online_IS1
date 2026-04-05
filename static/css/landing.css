@@ -1,0 +1,714 @@
+/* ═══ LANDING PAGE STYLES ═══ */
+.landing {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+/* ── HERO ── */
+.landing-hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+    padding: 4rem 0 3rem;
+    min-height: 520px;
+}
+
+.landing-hero-badge {
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1e3a8a; /* Navy */
+    background: rgba(30, 58, 138, 0.1);
+    border: 1px solid rgba(30, 58, 138, 0.2);
+    padding: 6px 16px;
+    border-radius: 999px;
+    margin-bottom: 1.2rem;
+    letter-spacing: 0.02em;
+}
+
+.landing-hero-title {
+    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-size: 3.6rem;
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    color: #0f172a;
+    margin: 0 0 1.2rem;
+}
+
+.landing-hero-accent {
+    background: linear-gradient(135deg, #1e3a8a, #dc2626); /* Navy to Red */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.landing-hero-subtitle {
+    font-size: 1.15rem;
+    line-height: 1.65;
+    color: #64748b;
+    margin: 0 0 2rem;
+    max-width: 480px;
+}
+
+.landing-hero-actions {
+    display: flex;
+    gap: 0.85rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+}
+
+.landing-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 14px 28px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-btn-primary {
+    color: #fff;
+    background: linear-gradient(135deg, #1e3a8a, #1e40af);
+    box-shadow: 0 4px 14px rgba(30, 58, 138, 0.35), 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.landing-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(30, 58, 138, 0.45), 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.landing-btn-ghost {
+    color: #1e3a8a;
+    background: rgba(30, 58, 138, 0.08);
+    border: 1px solid rgba(30, 58, 138, 0.2);
+}
+
+.landing-btn-ghost:hover {
+    background: rgba(30, 58, 138, 0.14);
+    transform: translateY(-1px);
+}
+
+.landing-btn-lg {
+    padding: 17px 36px;
+    font-size: 1.05rem;
+}
+
+.landing-hero-stats {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.landing-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.landing-stat strong {
+    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.landing-stat span {
+    font-size: 0.82rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.landing-stat-divider {
+    width: 1px;
+    height: 36px;
+    background: rgba(30, 58, 138, 0.2);
+}
+
+.landing-hero-visual {
+    display: flex;
+    justify-content: center;
+}
+
+.landing-hero-img-wrap {
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(79, 70, 229, 0.18), 0 4px 12px rgba(0,0,0,0.08);
+    max-width: 520px;
+    width: 100%;
+    aspect-ratio: 4/3;
+}
+
+.landing-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.landing-hero-img-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 60%, rgba(79, 70, 229, 0.12) 100%);
+    pointer-events: none;
+}
+
+/* ── SECTIONS ── */
+.landing-section-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.landing-section-badge {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #1e3a8a;
+    background: rgba(30, 58, 138, 0.08);
+    border: 1px solid rgba(30, 58, 138, 0.15);
+    padding: 5px 14px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 1rem;
+}
+
+.landing-section-title {
+    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #0f172a;
+    margin: 0;
+}
+
+.landing-section-desc {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-top: 0.5rem;
+}
+
+/* ── PAYMENT LOGOS ── */
+.landing-payment-logos {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem 0;
+    margin: -1.5rem 0 2rem;
+    border-top: 1px solid rgba(30, 58, 138, 0.08);
+    border-bottom: 1px solid rgba(30, 58, 138, 0.08);
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+}
+
+.landing-payment-logos p {
+    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #64748b;
+    margin: 0;
+}
+
+.landing-payment-icons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    color: #1e3a8a;
+    opacity: 0.8;
+}
+
+.landing-payment-icons svg {
+    height: 22px;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.landing-pm-badge {
+    background: #1e3a8a;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    opacity: 0.95;
+}
+
+html[data-theme="dark"] .landing-payment-logos {
+    background: rgba(15, 23, 42, 0.3);
+    border-color: rgba(59, 130, 246, 0.1);
+}
+
+html[data-theme="dark"] .landing-payment-icons {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .landing-pm-badge {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* ── FEATURES ── */
+.landing-features {
+    padding: 4rem 0;
+}
+
+.landing-features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+}
+
+.landing-feature-card {
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(30, 58, 138, 0.1);
+    border-radius: 20px;
+    padding: 2rem 1.5rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.04), 0 12px 30px rgba(30, 58, 138, 0.06);
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 12px -2px rgba(0,0,0,0.06), 0 20px 40px rgba(220, 38, 38, 0.12);
+    border-color: rgba(220, 38, 38, 0.2);
+}
+
+.landing-feature-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: rgba(30, 58, 138, 0.08); /* Navy secondary box */
+}
+
+.landing-feature-card h3 {
+    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    color: #0f172a;
+}
+
+.landing-feature-card p {
+    font-size: 0.9rem;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* ── TEAM ── */
+.landing-team {
+    padding: 3rem 0 4rem;
+}
+
+.landing-team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.25rem;
+}
+
+.landing-team-card {
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(30, 58, 138, 0.1);
+    border-radius: 20px;
+    padding: 1.75rem 1.25rem;
+    text-align: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.04), 0 12px 30px rgba(30, 58, 138, 0.06);
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-team-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 12px -2px rgba(0,0,0,0.06), 0 20px 40px rgba(30, 58, 138, 0.12);
+    border-color: rgba(30, 58, 138, 0.2);
+}
+
+.landing-team-avatar {
+    font-size: 2.2rem;
+    margin-bottom: 0.75rem;
+}
+
+.landing-team-name {
+    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 0.2rem;
+    color: #0f172a;
+}
+
+.landing-team-role {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 0 0 0.5rem;
+}
+
+.landing-team-rating {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.landing-team-stars {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #f59e0b;
+}
+
+.landing-team-reviews {
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+
+.landing-team-new {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    font-style: italic;
+    margin: 0;
+}
+
+/* ── PRICING ── */
+.landing-pricing {
+    padding: 3rem 0 4rem;
+}
+
+.landing-pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.25rem;
+}
+
+.landing-price-card {
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(30, 58, 138, 0.1);
+    border-radius: 18px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.04), 0 12px 30px rgba(30, 58, 138, 0.06);
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-price-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 12px -2px rgba(0,0,0,0.06), 0 20px 40px rgba(30, 58, 138, 0.12);
+    border-color: rgba(30, 58, 138, 0.2);
+}
+
+.landing-price-top h4 {
+    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+    color: #0f172a;
+}
+
+.landing-price-duration {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.landing-price-bottom {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+
+.landing-price-amount {
+    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #1e3a8a;
+    letter-spacing: -0.02em;
+}
+
+.landing-price-bs {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* ── CTA ── */
+.landing-cta {
+    position: relative;
+    border-radius: 28px;
+    overflow: hidden;
+    padding: 4.5rem 2rem;
+    margin: 2rem 0 3rem;
+    text-align: center;
+}
+
+.landing-cta-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #1e3a8a, #dc2626, #b91c1c); /* Navy + Cardinal Red */
+    z-index: 0;
+}
+
+.landing-cta-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.1) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 70%, rgba(220, 38, 38, 0.2) 0%, transparent 50%);
+}
+
+.landing-cta-content {
+    position: relative;
+    z-index: 1;
+}
+
+.landing-cta h2 {
+    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 0.75rem;
+    letter-spacing: -0.025em;
+}
+
+.landing-cta p {
+    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 0 2rem;
+}
+
+.landing-cta .landing-btn-primary {
+    background: #fff;
+    color: #dc2626; /* Red on the button over blue background looks sharp */
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.landing-cta .landing-btn-primary:hover {
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+}
+
+/* ── ANIMATION ── */
+.landing-hero-content,
+.landing-hero-visual,
+.landing-feature-card,
+.landing-team-card,
+.landing-price-card,
+.landing-cta-content {
+    animation: landing-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.landing-hero-visual { animation-delay: 0.12s; }
+.landing-feature-card:nth-child(1) { animation-delay: 0.06s; }
+.landing-feature-card:nth-child(2) { animation-delay: 0.12s; }
+.landing-feature-card:nth-child(3) { animation-delay: 0.18s; }
+.landing-feature-card:nth-child(4) { animation-delay: 0.24s; }
+.landing-feature-card:nth-child(5) { animation-delay: 0.30s; }
+.landing-feature-card:nth-child(6) { animation-delay: 0.36s; }
+.landing-team-card:nth-child(n) { animation-delay: calc(var(--i, 0) * 0.06s); }
+.landing-price-card:nth-child(n) { animation-delay: calc(var(--i, 0) * 0.06s); }
+
+@keyframes landing-fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── DARK MODE ── */
+html[data-theme="dark"] .landing-hero-badge,
+html[data-theme="dark"] .landing-section-badge {
+    color: #93c5fd; /* Soft Blue */
+    background: rgba(30, 58, 138, 0.4);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+html[data-theme="dark"] .landing-hero-title,
+html[data-theme="dark"] .landing-section-title,
+html[data-theme="dark"] .landing-feature-card h3,
+html[data-theme="dark"] .landing-team-name,
+html[data-theme="dark"] .landing-price-top h4 {
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .landing-hero-subtitle,
+html[data-theme="dark"] .landing-feature-card p,
+html[data-theme="dark"] .landing-team-role,
+html[data-theme="dark"] .landing-section-desc {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .landing-stat strong {
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .landing-stat span,
+html[data-theme="dark"] .landing-team-reviews,
+html[data-theme="dark"] .landing-team-new,
+html[data-theme="dark"] .landing-price-duration,
+html[data-theme="dark"] .landing-price-bs {
+    color: #64748b;
+}
+
+html[data-theme="dark"] .landing-stat-divider {
+    background: rgba(59, 130, 246, 0.2);
+}
+
+html[data-theme="dark"] .landing-feature-card,
+html[data-theme="dark"] .landing-team-card,
+html[data-theme="dark"] .landing-price-card {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(59, 130, 246, 0.12);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15), 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="dark"] .landing-feature-card:hover,
+html[data-theme="dark"] .landing-team-card:hover,
+html[data-theme="dark"] .landing-price-card:hover {
+    border-color: rgba(220, 38, 38, 0.3); /* Hover border red */
+    box-shadow: 0 8px 12px -2px rgba(0,0,0,0.2), 0 20px 40px rgba(220, 38, 38, 0.15); /* Hover glow red */
+}
+
+html[data-theme="dark"] .landing-feature-icon {
+    background: rgba(30, 58, 138, 0.3); /* Navy */
+}
+
+html[data-theme="dark"] .landing-hero-img-wrap {
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0,0,0,0.2);
+}
+
+html[data-theme="dark"] .landing-hero-img-overlay {
+    background: linear-gradient(180deg, transparent 50%, rgba(2, 6, 23, 0.3) 100%);
+}
+
+html[data-theme="dark"] .landing-price-amount {
+    color: #93c5fd;
+}
+
+html[data-theme="dark"] .landing-btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+}
+
+html[data-theme="dark"] .landing-btn-ghost {
+    color: #93c5fd;
+    background: rgba(30, 58, 138, 0.2);
+    border-color: rgba(59, 130, 246, 0.25);
+}
+
+html[data-theme="dark"] .landing-cta-bg {
+    background: linear-gradient(135deg, #1e3a8a, #7f1d1d, #450a0a); /* Deep Navy to Crimson */
+}
+
+html[data-theme="dark"] .landing-cta .landing-btn-primary {
+    background: rgba(255, 255, 255, 0.12);
+    color: #e0e7ff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+html[data-theme="dark"] .landing-cta .landing-btn-primary:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+    .landing-hero {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 2.5rem 0;
+        min-height: auto;
+    }
+
+    .landing-hero-title {
+        font-size: 2.6rem;
+    }
+
+    .landing-hero-visual {
+        order: -1;
+    }
+
+    .landing-hero-img-wrap {
+        max-width: 100%;
+        aspect-ratio: 16/9;
+    }
+
+    .landing-features-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .landing-section-title {
+        font-size: 1.8rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .landing {
+        padding: 0 1rem;
+    }
+
+    .landing-hero-title {
+        font-size: 2.1rem;
+    }
+
+    .landing-hero-subtitle {
+        font-size: 1rem;
+    }
+
+    .landing-features-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .landing-team-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .landing-pricing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .landing-hero-stats {
+        gap: 1rem;
+    }
+
+    .landing-cta {
+        padding: 3rem 1.5rem;
+        border-radius: 20px;
+    }
+
+    .landing-cta h2 {
+        font-size: 1.6rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .landing-hero-content,
+    .landing-hero-visual,
+    .landing-feature-card,
+    .landing-team-card,
+    .landing-price-card,
+    .landing-cta-content {
+        animation: none;
+    }
+}

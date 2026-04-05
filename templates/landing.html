@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Barbería — Tu estilo, nuestra pasión{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="landing">
+
+    <!-- ═══ HERO ═══ -->
+    <section class="landing-hero">
+        <div class="landing-hero-content">
+            <h1 class="landing-hero-title">Tu estilo,<br>nuestra <span class="landing-hero-accent">pasión</span></h1>
+            <p class="landing-hero-subtitle">Profesionales de élite, ambiente premium y reservas en segundos. Descubre
+                la experiencia que mereces.</p>
+            <div class="landing-hero-actions">
+                <a href="{{ url_for('booking_page') }}" class="landing-btn landing-btn-primary">
+                    <span>Reservar ahora</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="m12 5 7 7-7 7" />
+                    </svg>
+                </a>
+                <a href="#equipo" class="landing-btn landing-btn-ghost">Conocer el equipo</a>
+            </div>
+            <div class="landing-hero-stats">
+                <div class="landing-stat">
+                    <strong>{{ employees | length }}</strong>
+                    <span>Profesionales</span>
+                </div>
+                <div class="landing-stat-divider"></div>
+                <div class="landing-stat">
+                    <strong>{{ services | length }}</strong>
+                    <span>Servicios</span>
+                </div>
+                <div class="landing-stat-divider"></div>
+                <div class="landing-stat">
+                    <strong>24/7</strong>
+                    <span>Reservas online</span>
+                </div>
+            </div>
+        </div>
+        <div class="landing-hero-visual">
+            <div class="landing-hero-img-wrap">
+                <img src="{{ url_for('static', filename='img/hero-barbershop.png') }}"
+                    alt="Interior de barbería premium" class="landing-hero-img" loading="eager">
+                <div class="landing-hero-img-overlay"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ PAYMENT LOGOS ═══ -->
+    <div class="landing-payment-logos">
+        <p>MÉTODOS DE PAGO SEGUROS</p>
+        <div class="landing-payment-icons">
+            <div class="landing-pm-badge">
+                <svg stroke="currentColor" fill="none" viewBox="0 0 24 24" width="18" height="18">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
+                    </path>
+                </svg>
+                Stripe
+            </div>
+            <div class="landing-pm-badge">
+                <svg stroke="currentColor" fill="none" viewBox="0 0 24 24" width="18" height="18">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                    </path>
+                </svg>
+                Tarjetas Internacionales
+            </div>
+            <div class="landing-pm-badge">
+                <svg stroke="currentColor" fill="none" viewBox="0 0 24 24" width="18" height="18">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+                Pago Móvil
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ FEATURES ═══ -->
+    <section class="landing-features" id="servicios">
+        <div class="landing-section-header">
+            <span class="landing-section-badge">Lo que nos define</span>
+            <h2 class="landing-section-title">Una experiencia <span class="landing-hero-accent">completa</span></h2>
+        </div>
+        <div class="landing-features-grid">
+            <div class="landing-feature-card">
+                <div class="landing-feature-icon">⚡</div>
+                <h3>Reserva instantánea</h3>
+                <p>Elige servicio, profesional y horario en tiempo real. Sin llamadas, sin esperas.</p>
+            </div>
+            <div class="landing-feature-card">
+                <div class="landing-feature-icon">💈</div>
+                <h3>Profesionales de élite</h3>
+                <p>Cada miembro de nuestro equipo es un especialista con experiencia verificada y calificación de
+                    clientes.</p>
+            </div>
+            <div class="landing-feature-card">
+                <div class="landing-feature-icon">💳</div>
+                <h3>Pago flexible</h3>
+                <p>Paga con tarjeta de crédito via Stripe o transferencia móvil. Tú eliges cómo.</p>
+            </div>
+            <div class="landing-feature-card">
+                <div class="landing-feature-icon">📊</div>
+                <h3>Transparencia total</h3>
+                <p>Precios publicados en USD y bolívares con tasa BCV actualizada al momento.</p>
+            </div>
+            <div class="landing-feature-card">
+                <div class="landing-feature-icon">⭐</div>
+                <h3>Sistema de calificación</h3>
+                <p>Califica tu experiencia después de cada visita. Las reseñas son públicas y verificadas.</p>
+            </div>
+            <div class="landing-feature-card">
+                <div class="landing-feature-icon">🔔</div>
+                <h3>Recordatorios</h3>
+                <p>Recibe confirmación por correo y nunca olvides tu cita con nuestro sistema de alertas.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ TEAM ═══ -->
+    <section class="landing-team" id="equipo">
+        <div class="landing-section-header">
+            <span class="landing-section-badge">Nuestro talento</span>
+            <h2 class="landing-section-title">Conoce al <span class="landing-hero-accent">equipo</span></h2>
+        </div>
+        <div class="landing-team-grid">
+            {% for emp in employees %}
+            <div class="landing-team-card">
+                <div class="landing-team-avatar">
+                    {% if emp.work_areas %}
+                    {% set areas = emp.work_areas.split(',') %}
+                    {% for area in areas[:2] %}
+                    {% if area.strip() == 'General' %}💇{% elif area.strip() == 'Corte de cabello' %}✂️{% elif
+                    area.strip() == 'Corte de barba' %}🧔{% elif area.strip() == 'Manicura' %}💅{% elif area.strip() ==
+                    'Tinte' %}🎨{% else %}💈{% endif %}
+                    {% endfor %}
+                    {% else %}
+                    💈
+                    {% endif %}
+                </div>
+                <h4 class="landing-team-name">{{ emp.name }}</h4>
+                <p class="landing-team-role">{{ emp.work_areas or 'Profesional' }}</p>
+                {% if employee_ratings.get(emp.id) %}
+                <div class="landing-team-rating">
+                    <span class="landing-team-stars">⭐ {{ "%.1f" | format(employee_ratings[emp.id].average) }}</span>
+                    <span class="landing-team-reviews">({{ employee_ratings[emp.id].count }} {{ 'reseña' if
+                        employee_ratings[emp.id].count == 1 else 'reseñas' }})</span>
+                </div>
+                {% else %}
+                <p class="landing-team-new">Nuevo en el equipo</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- ═══ PRICING ═══ -->
+    <section class="landing-pricing" id="precios">
+        <div class="landing-section-header">
+            <span class="landing-section-badge">Precios transparentes</span>
+            <h2 class="landing-section-title">Nuestros <span class="landing-hero-accent">servicios</span></h2>
+            <p class="landing-section-desc">Tasa BCV: {{ "%.2f" | format(bcv_usd_rate) }} Bs/USD</p>
+        </div>
+        <div class="landing-pricing-grid">
+            {% for item in price_board %}
+            <div class="landing-price-card">
+                <div class="landing-price-top">
+                    <h4>{{ item.service_name }}</h4>
+                    <span class="landing-price-duration">{{ item.duration }} min</span>
+                </div>
+                <div class="landing-price-bottom">
+                    <span class="landing-price-amount">${{ "%.2f" | format(item.price_usd) }}</span>
+                    <span class="landing-price-bs">{{ "%.2f" | format(item.price_bcv) }} Bs</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- ═══ CTA ═══ -->
+    <section class="landing-cta">
+        <div class="landing-cta-bg"></div>
+        <div class="landing-cta-content">
+            <h2>¿Listo para un nuevo look?</h2>
+            <p>Reserva tu cita en menos de 60 segundos. Sin cuenta, sin complicaciones.</p>
+            <a href="{{ url_for('booking_page') }}" class="landing-btn landing-btn-primary landing-btn-lg">
+                <span>Reservar mi cita</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                </svg>
+            </a>
+        </div>
+    </section>
+
+</div>
+{% endblock %}

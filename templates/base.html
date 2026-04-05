@@ -13,7 +13,7 @@
     <title>{% block title %}Barbería{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
@@ -33,17 +33,20 @@
             </button>
             <div id="brand-dropdown" class="brand-dropdown" role="menu">
                 {% if session.get('is_admin') %}
-                <a href="{{ url_for('home') }}" class="brand-dropdown-link" role="menuitem">Reservas</a>
+                <a href="{{ url_for('landing') }}" class="brand-dropdown-link" role="menuitem">Inicio</a>
+                <a href="{{ url_for('booking_page') }}" class="brand-dropdown-link" role="menuitem">Reservas</a>
                 <a href="{{ url_for('admin_dashboard') }}" class="brand-dropdown-link" role="menuitem">Administración</a>
                 <a href="{{ url_for('admin_logout') }}" class="brand-dropdown-link brand-dropdown-link-danger" role="menuitem">Cerrar
                     sesión</a>
                 {% elif session.get('is_employee') %}
-                <a href="{{ url_for('home') }}" class="brand-dropdown-link" role="menuitem">Reservas</a>
+                <a href="{{ url_for('landing') }}" class="brand-dropdown-link" role="menuitem">Inicio</a>
+                <a href="{{ url_for('booking_page') }}" class="brand-dropdown-link" role="menuitem">Reservas</a>
                 <a href="{{ url_for('employee_dashboard') }}" class="brand-dropdown-link" role="menuitem">Mi agenda</a>
                 <a href="{{ url_for('employee_logout') }}" class="brand-dropdown-link brand-dropdown-link-danger" role="menuitem">Cerrar
                     sesión</a>
                 {% else %}
-                <a href="{{ url_for('home') }}" class="brand-dropdown-link" role="menuitem">Reservas</a>
+                <a href="{{ url_for('landing') }}" class="brand-dropdown-link" role="menuitem">Inicio</a>
+                <a href="{{ url_for('booking_page') }}" class="brand-dropdown-link" role="menuitem">Reservas</a>
                 <a href="{{ url_for('employee_login') }}" class="brand-dropdown-link" role="menuitem">Portal empleados</a>
                 <a href="{{ url_for('admin_login') }}" class="brand-dropdown-link" role="menuitem">Administración</a>
                 {% endif %}
@@ -79,7 +82,9 @@
                 <p>🕐 Horario: Lun – Sáb, 9:00 AM – 7:00 PM</p>
             </div>
             <div class="footer-links">
-                <a href="{{ url_for('home') }}">Reservas</a>
+                <a href="{{ url_for('landing') }}">Inicio</a>
+                <span class="footer-divider">|</span>
+                <a href="{{ url_for('booking_page') }}">Reservas</a>
                 <span class="footer-divider">•</span>
                 <a href="{{ url_for('admin_login') }}">Administración</a>
             </div>
