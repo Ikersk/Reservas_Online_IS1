@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi agenda{% endblock %}
+
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<section class="employee-dashboard">
+    <header class="employee-dashboard-hero">
+        <div class="employee-dashboard-intro">
+            <span class="section-badge employee-dashboard-badge">Portal empleados</span>
+            <h2>Hola, {{ employee.name }}</h2>
+            <p>Consulta tus reservas pendientes y organiza tu agenda desde una sola vista.</p>
+        </div>
+
+        <div class="employee-dashboard-meta">
+            <div class="employee-kpi-list">
+                <div class="employee-kpi">
+                    <span>Pendientes</span>
+                    <strong>{{ pending_appointments | length }}</strong>
+                </div>
+                <div class="employee-kpi">
+                    <span>Area</span>
+                    <strong>{{ employee.work_area or 'General' }}</strong>
+                </div>
+            </div>
+            <p class="employee-meta-email">{{ employee.email or 'Sin correo registrado' }}</p>
+        </div>
+    </header>
+
+    <section class="employee-overview-grid">
+        <article class="employee-overview-card">
+            <span class="employee-overview-label">Proxima cita</span>
+            {% if pending_appointments %}
+            <p class="employee-overview-value">{{ pending_appointments[0].appointment_datetime }}</p>
+            <small>{{ pending_appointments[0].service_name }} con {{ pending_appointments[0].client_name }}</small>
+            {% else %}
+            <p class="employee-overview-value">Sin proximas citas</p>
+            <small>No hay reservas pendientes.</small>
+            {% endif %}
+        </article>
+
+        <article class="employee-overview-card">
+            <span class="employee-overview-label">Estado de agenda</span>
+            {% if pending_appointments %}
+            <p class="employee-overview-value">Activa</p>
+            <small>Tienes {{ pending_appointments | length }} cita{% if pending_appointments | length != 1 %}s{% endif %} por atender.</small>
+            {% else %}
+            <p class="employee-overview-value">Libre</p>
+            <small>Sin pendientes en este momento.</small>
+            {% endif %}
+        </article>
+    </section>
+
+    <section class="employee-workspace-grid">
+        <article class="card employee-panel-card employee-pending-section">
+            <div class="section-heading compact">
+                <h3>Citas pendientes</h3>
+                <p>Reservas proximas asignadas a tu cuenta.</p>
+            </div>
+
+            {% if pending_appointments %}
+            <div class="table-wrapper employee-table-wrapper">
+                <table class="employee-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha y hora</th>
+                            <th>Cliente</th>
+                            <th>Servicio</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in pending_appointments %}
+                        <tr>
+                            <td>{{ item.appointment_datetime }}</td>
+                            <td>{{ item.client_name }}</td>
+                            <td>{{ item.service_name }} ({{ item.service_duration }} min)</td>
+                            <td>
+                                <span class="status-badge {{ item.status }}">
+                                    {% if item.status == 'pending_payment' %}
+                                    Pendiente pago
+                                    {% elif item.status == 'scheduled' %}
+                                    Agendada
+                                    {% else %}
+                                    {{ item.status }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state employee-empty-state">
+                <p>No tienes citas pendientes por ahora.</p>
+            </div>
+            {% endif %}
+        </article>
+
+        <article class="card employee-panel-card employee-calendar-section">
+            <div class="section-heading compact">
+                <h3>Mi calendario</h3>
+                <p>Vista mensual para organizar tu jornada.</p>
+            </div>
+
+            <div id="employee-calendar" data-events-url="{{ url_for('employee_appointments_api') }}"></div>
+        </article>
+    </section>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script>
+(() => {
+    const calendarElement = document.getElementById("employee-calendar");
+    if (!calendarElement || typeof FullCalendar === "undefined") {
+        return;
+    }
+
+    const eventsUrl = calendarElement.dataset.eventsUrl;
+
+    const calendar = new FullCalendar.Calendar(calendarElement, {
+        initialView: "dayGridMonth",
+        locale: "es",
+        height: "auto",
+        headerToolbar: {
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,timeGridDay",
+        },
+        buttonText: {
+            today: "Hoy",
+            month: "Mes",
+            week: "Semana",
+            day: "Día",
+        },
+        events: async (_, successCallback, failureCallback) => {
+            try {
+                const response = await fetch(eventsUrl);
+                if (!response.ok) {
+                    failureCallback(new Error("No se pudieron cargar las citas"));
+                    return;
+                }
+                successCallback(await response.json());
+            } catch (error) {
+                failureCallback(error);
+            }
+        },
+        eventTimeFormat: {
+            hour: "2-digit",
+            minute: "2-digit",
+            meridiem: false,
+        },
+        dayMaxEvents: true,
+        firstDay: 1,
+        eventDidMount: ({ event, el }) => {
+            const status = event.extendedProps.status || "Sin estado";
+            const clientName = event.extendedProps.client_name || "Cliente";
+            el.setAttribute("title", `${clientName} - ${status}`);
+        },
+    });
+
+    calendar.render();
+    window.addEventListener("resize", () => calendar.updateSize());
+})();
+</script>
+{% endblock %}

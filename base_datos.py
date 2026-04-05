@@ -66,6 +66,7 @@ class Employee(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, nullable=True)
+    password_hash: Mapped[str] = mapped_column(String, nullable=True)
     work_area: Mapped[str] = mapped_column(String, nullable=False, default="General")
     
 
@@ -325,6 +326,8 @@ def init_db():
         }
         if "work_area" not in existing_emp_columns:
             connection.execute(text("ALTER TABLE employees ADD COLUMN work_area TEXT NOT NULL DEFAULT 'General'"))
+        if "password_hash" not in existing_emp_columns:
+            connection.execute(text("ALTER TABLE employees ADD COLUMN password_hash TEXT"))
         
 
         existing_columns = {
@@ -603,10 +606,16 @@ def get_employees():
 # Qué hace: crea un empleado nuevo.
 # Qué valida: nombre obligatorio/no duplicado y email válido opcional.
 # Qué retorna: `(success, mensaje)`.
-def create_employee(name: str, email: str | None = None, work_area: str = "General"):
+def create_employee(
+    name: str,
+    email: str | None = None,
+    work_area: str = "General",
+    password_hash: str | None = None,
+):
     normalized_name = re.sub(r"\s+", " ", (name or "").strip())
     normalized_email = (email or "").strip().lower()
     normalized_work_area = (work_area or "General").strip()
+    normalized_password_hash = re.sub(r"\s+", " ", (password_hash or "").strip())
 
     if not normalized_name:
         return False, "El nombre del empleado es obligatorio."
@@ -631,10 +640,18 @@ def create_employee(name: str, email: str | None = None, work_area: str = "Gener
         if existing:
             return False, "Ya existe un empleado con ese nombre."
 
+        if normalized_email:
+            existing_email = session.execute(
+                select(Employee).where(Employee.email == normalized_email)
+            ).scalar_one_or_none()
+            if existing_email:
+                return False, "Ya existe un empleado con ese correo."
+
         session.add(
             Employee(
                 name=normalized_name,
                 email=normalized_email or None,
+                password_hash=normalized_password_hash or None,
                 work_area=normalized_work_area,
             )
         )
@@ -646,10 +663,17 @@ def create_employee(name: str, email: str | None = None, work_area: str = "Gener
 # Qué hace: actualiza nombre y/o email de un empleado.
 # Qué valida: existencia, duplicados de nombre y formato de email.
 # Qué retorna: `(success, mensaje)`.
-def update_employee(employee_id: int, name: str, email: str | None = None, work_area: str = "General"):
+def update_employee(
+    employee_id: int,
+    name: str,
+    email: str | None = None,
+    work_area: str = "General",
+    password_hash: str | None = None,
+):
     normalized_name = re.sub(r"\s+", " ", (name or "").strip())
     normalized_email = (email or "").strip().lower()
     normalized_work_area = (work_area or "General").strip()
+    normalized_password_hash = re.sub(r"\s+", " ", (password_hash or "").strip())
 
     if not normalized_name:
         return False, "El nombre del empleado es obligatorio."
@@ -681,10 +705,22 @@ def update_employee(employee_id: int, name: str, email: str | None = None, work_
         if duplicate:
             return False, "Ya existe otro empleado con ese nombre."
 
+        if normalized_email:
+            duplicate_email = session.execute(
+                select(Employee).where(
+                    Employee.email == normalized_email,
+                    Employee.id != employee_id,
+                )
+            ).scalar_one_or_none()
+            if duplicate_email:
+                return False, "Ya existe otro empleado con ese correo."
+
         employee.name = normalized_name
         employee.email = normalized_email or None
         if normalized_work_area:
             employee.work_area = normalized_work_area
+        if normalized_password_hash:
+            employee.password_hash = normalized_password_hash
         session.commit()
 
     return True, "Empleado actualizado correctamente."
@@ -707,6 +743,113 @@ def delete_employee(employee_id: int):
         session.commit()
 
     return True, "Empleado eliminado correctamente."
+
+
+# Qué hace: obtiene datos básicos de un empleado por ID.
+# Qué valida: existencia del empleado.
+# Qué retorna: diccionario de empleado o `None`.
+def get_employee_by_id(employee_id: int):
+    with get_session() as session:
+        employee = session.get(Employee, employee_id)
+
+    if not employee:
+        return None
+
+    return {
+        "id": employee.id,
+        "name": employee.name,
+        "email": employee.email,
+        "work_area": employee.work_area,
+    }
+
+
+# Qué hace: busca identidad de acceso para portal de empleados por email.
+# Qué valida: email normalizado no vacío.
+# Qué retorna: diccionario con credenciales o `None`.
+def get_employee_auth_by_email(email: str):
+    normalized_email = (email or "").strip().lower()
+    if not normalized_email:
+        return None
+
+    with get_session() as session:
+        row = session.execute(
+            select(
+                Employee.id,
+                Employee.name,
+                Employee.email,
+                Employee.password_hash,
+                Employee.work_area,
+            ).where(Employee.email == normalized_email)
+            .order_by(Employee.id.asc())
+        ).first()
+
+    if not row:
+        return None
+
+    return dict(row._mapping)
+
+
+# Qué hace: lista próximas citas pendientes de un empleado.
+# Qué valida: estados pendientes (`pending_payment`, `scheduled`) y fecha >= ahora.
+# Qué retorna: lista de citas en formato diccionario.
+def get_employee_pending_appointments(employee_id: int):
+    now_str = get_local_now().strftime(DATETIME_FORMAT)
+
+    with get_session() as session:
+        rows = session.execute(
+            select(
+                Appointment.id,
+                Client.name.label("client_name"),
+                Client.email.label("client_email"),
+                Service.name.label("service_name"),
+                Service.duration_minutes.label("service_duration"),
+                Appointment.appointment_datetime,
+                Appointment.status,
+            )
+            .join(Client, Client.id == Appointment.client_id)
+            .join(Service, Service.id == Appointment.service_id)
+            .where(
+                Appointment.employee_id == employee_id,
+                Appointment.status.in_(["pending_payment", "scheduled"]),
+                Appointment.appointment_datetime >= now_str,
+            )
+            .order_by(Appointment.appointment_datetime.asc())
+        ).all()
+
+    output = []
+    for row in rows:
+        item = dict(row._mapping)
+        item["service_duration"] = int(item.get("service_duration") or SLOT_DURATION_MINUTES)
+        output.append(item)
+
+    return output
+
+
+# Qué hace: lista citas futuras de un empleado para su calendario.
+# Qué valida: filtra por empleado y desde el día actual.
+# Qué retorna: lista de citas en formato diccionario.
+def get_employee_calendar_appointments(employee_id: int):
+    day_start = get_local_now().strftime(DATE_FORMAT) + " 00:00"
+
+    with get_session() as session:
+        rows = session.execute(
+            select(
+                Appointment.id,
+                Client.name.label("client_name"),
+                Service.name.label("service_name"),
+                Appointment.appointment_datetime,
+                Appointment.status,
+            )
+            .join(Client, Client.id == Appointment.client_id)
+            .join(Service, Service.id == Appointment.service_id)
+            .where(
+                Appointment.employee_id == employee_id,
+                Appointment.appointment_datetime >= day_start,
+            )
+            .order_by(Appointment.appointment_datetime.asc())
+        ).all()
+
+    return [dict(row._mapping) for row in rows]
 
 
 # Qué hace: obtiene duración de un servicio desde caché.

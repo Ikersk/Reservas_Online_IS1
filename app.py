@@ -53,6 +53,10 @@ from configuracion import (
 from base_datos import (
     init_db,
     get_employees,
+    get_employee_by_id,
+    get_employee_auth_by_email,
+    get_employee_pending_appointments,
+    get_employee_calendar_appointments,
     get_services,
     create_employee,
     create_service,
@@ -106,6 +110,12 @@ COLORES_EMPLEADOS = {
     "Luis": "#f59e0b",
 }
 COLORES_RESPALDO = ["#22c55e", "#ef4444", "#ec4899", "#14b8a6", "#6366f1"]
+COLORES_ESTADO_EMPLEADO = {
+    "pending_payment": "#f59e0b",
+    "scheduled": "#2563eb",
+    "completed": "#16a34a",
+    "canceled": "#dc2626",
+}
 
 
 # Qué hace: verifica si hay sesión administrativa activa.
@@ -113,6 +123,14 @@ COLORES_RESPALDO = ["#22c55e", "#ef4444", "#ec4899", "#14b8a6", "#6366f1"]
 # Qué retorna: `True`/`False`.
 def _admin_autenticado():
     return bool(session.get("is_admin"))
+
+
+# Qué hace: verifica si hay sesión activa de empleado.
+# Qué valida: bandera y `employee_id` válidos en sesión.
+# Qué retorna: `True`/`False`.
+def _employee_autenticado():
+    employee_id = session.get("employee_id")
+    return bool(session.get("is_employee") and isinstance(employee_id, int) and employee_id > 0)
 
 
 # Qué hace: define clave de rate-limit para login admin con menor colisión.
@@ -192,6 +210,23 @@ def _entero_positivo(value: str):
         return parsed if parsed > 0 else None
     except (TypeError, ValueError):
         return None
+
+
+# Qué hace: valida y hashea contraseña de portal empleado cuando se provee.
+# Qué valida: longitud máxima y mínimo de 6 caracteres.
+# Qué retorna: `(success, mensaje, password_hash|None)`.
+def _procesar_clave_empleado(raw_password: str):
+    normalized = (raw_password or "").strip()
+    if not normalized:
+        return True, "", None
+
+    if len(normalized) > MAX_LONGITUD_CLAVE:
+        return False, "La contraseña del empleado excede la longitud permitida.", None
+
+    if len(normalized) < 6:
+        return False, "La contraseña del empleado debe tener al menos 6 caracteres.", None
+
+    return True, "", generate_password_hash(normalized)
 
 
 def _normalizar_texto(value: str):
@@ -887,6 +922,141 @@ def booking_success(appointment_id: int):
     return render_template("confirmacion.html", appointment=appointment)
 
 
+# Qué hace: maneja login del portal para empleados.
+# Qué valida: email, contraseña y hash configurado del empleado.
+# Qué retorna: HTML de login o redirección al panel de empleado.
+@app.route("/empleados/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute", methods=["POST"], key_func=_admin_login_rate_limit_key)
+def employee_login():
+    if _employee_autenticado():
+        return redirect(url_for("employee_dashboard"))
+
+    if request.method == "POST":
+        employee_email = _normalizar_email(request.form.get("email", ""))
+        password = request.form.get("password", "")
+
+        if not employee_email or not password:
+            flash("Completa correo y contraseña para ingresar.", "error")
+            return render_template("employee_ingreso.html", max_password_length=MAX_LONGITUD_CLAVE)
+
+        if not _email_valido(employee_email):
+            flash("Correo o contraseña incorrectos.", "error")
+            return render_template("employee_ingreso.html", max_password_length=MAX_LONGITUD_CLAVE)
+
+        if len(password) > MAX_LONGITUD_CLAVE:
+            flash("Correo o contraseña incorrectos.", "error")
+            return render_template("employee_ingreso.html", max_password_length=MAX_LONGITUD_CLAVE)
+
+        employee_auth = get_employee_auth_by_email(employee_email)
+        stored_hash = employee_auth.get("password_hash") if employee_auth else ""
+
+        if employee_auth and not stored_hash:
+            flash("Tu cuenta aún no tiene contraseña configurada. Solicítala al administrador.", "error")
+            return render_template("employee_ingreso.html", max_password_length=MAX_LONGITUD_CLAVE)
+
+        password_is_valid = False
+        if stored_hash:
+            try:
+                password_is_valid = check_password_hash(stored_hash, password)
+            except ValueError:
+                password_is_valid = False
+
+        if password_is_valid:
+            session.permanent = True
+            session.pop("is_admin", None)
+            session["is_employee"] = True
+            session["employee_id"] = int(employee_auth["id"])
+            session["employee_name"] = employee_auth["name"]
+            return redirect(url_for("employee_dashboard"))
+
+        flash("Correo o contraseña incorrectos.", "error")
+
+    return render_template("employee_ingreso.html", max_password_length=MAX_LONGITUD_CLAVE)
+
+
+# Qué hace: cierra sesión del portal de empleados.
+# Qué valida: N/A.
+# Qué retorna: redirección al login de empleados.
+@app.get("/empleados/logout")
+def employee_logout():
+    session.pop("is_employee", None)
+    session.pop("employee_id", None)
+    session.pop("employee_name", None)
+    return redirect(url_for("employee_login"))
+
+
+# Qué hace: renderiza panel privado de empleado con citas pendientes.
+# Qué valida: sesión de empleado y existencia del empleado.
+# Qué retorna: HTML del panel de empleado.
+@app.get("/empleados")
+def employee_dashboard():
+    if not _employee_autenticado():
+        return redirect(url_for("employee_login"))
+
+    employee_id = _entero_positivo(str(session.get("employee_id", "")))
+    if employee_id is None:
+        session.pop("is_employee", None)
+        session.pop("employee_id", None)
+        session.pop("employee_name", None)
+        return redirect(url_for("employee_login"))
+
+    employee = get_employee_by_id(employee_id)
+    if not employee:
+        session.pop("is_employee", None)
+        session.pop("employee_id", None)
+        session.pop("employee_name", None)
+        flash("No se encontró la cuenta del empleado.", "error")
+        return redirect(url_for("employee_login"))
+
+    pending_appointments = get_employee_pending_appointments(employee_id)
+
+    return render_template(
+        "employee_panel.html",
+        employee=employee,
+        pending_appointments=pending_appointments,
+    )
+
+
+# Qué hace: expone eventos del calendario propio del empleado autenticado.
+# Qué valida: sesión activa de empleado.
+# Qué retorna: JSON con citas del empleado para FullCalendar.
+@app.get("/api/employee/appointments")
+@limiter.limit("40 per minute")
+def employee_appointments_api():
+    if not _employee_autenticado():
+        return jsonify({"error": "No autorizado"}), 401
+
+    employee_id = _entero_positivo(str(session.get("employee_id", "")))
+    if employee_id is None:
+        return jsonify({"error": "No autorizado"}), 401
+
+    appointments = get_employee_calendar_appointments(employee_id)
+    events = []
+
+    for item in appointments:
+        status = (item.get("status") or "").lower()
+        event_color = COLORES_ESTADO_EMPLEADO.get(status, "#64748b")
+        appointment_datetime = item["appointment_datetime"]
+        start_iso = appointment_datetime.replace(" ", "T", 1)
+
+        events.append(
+            {
+                "id": item["id"],
+                "title": f"{item['service_name']} - {item['client_name']}",
+                "start": start_iso,
+                "backgroundColor": event_color,
+                "borderColor": event_color,
+                "textColor": "#ffffff",
+                "extendedProps": {
+                    "client_name": item["client_name"],
+                    "status": status,
+                },
+            }
+        )
+
+    return jsonify(events)
+
+
 # Qué hace: maneja acceso al panel administrativo.
 # Qué valida: longitud de clave y hash de contraseña.
 # Qué retorna: HTML de login o redirección al dashboard.
@@ -1101,6 +1271,7 @@ def admin_add_employee():
     employee_name = _normalizar_texto(request.form.get("employee_name", ""))
     employee_email = _normalizar_email(request.form.get("employee_email", ""))
     work_area = _normalizar_texto(request.form.get("work_area", "General"))
+    employee_password = request.form.get("employee_password", "")
 
     if not _nombre_empleado_valido(employee_name):
         flash("El nombre del empleado es inválido. Usa letras reales y evita repeticiones excesivas.", "error")
@@ -1114,7 +1285,17 @@ def admin_add_employee():
         flash("El correo del empleado es inválido.", "error")
         return redirect(url_for("admin_dashboard"))
 
-    success, message = create_employee(employee_name, normalized_email, work_area)
+    password_ok, password_msg, password_hash = _procesar_clave_empleado(employee_password)
+    if not password_ok:
+        flash(password_msg, "error")
+        return redirect(url_for("admin_dashboard"))
+
+    success, message = create_employee(
+        employee_name,
+        normalized_email,
+        work_area,
+        password_hash=password_hash,
+    )
     flash(message, "success" if success else "error")
 
     return redirect(url_for("admin_dashboard"))
@@ -1225,6 +1406,7 @@ def admin_edit_employee(employee_id: int):
     employee_name = _normalizar_texto(request.form.get("employee_name", ""))
     employee_email = _normalizar_email(request.form.get("employee_email", ""))
     work_area = _normalizar_texto(request.form.get("work_area", "General"))
+    employee_password = request.form.get("employee_password", "")
 
     if not _nombre_empleado_valido(employee_name):
         flash("El nombre del empleado es inválido. Usa letras reales y evita repeticiones excesivas.", "error")
@@ -1238,7 +1420,18 @@ def admin_edit_employee(employee_id: int):
         flash("El correo del empleado es inválido.", "error")
         return redirect(url_for("admin_dashboard"))
 
-    success, message = update_employee(employee_id, employee_name, normalized_email, work_area)
+    password_ok, password_msg, password_hash = _procesar_clave_empleado(employee_password)
+    if not password_ok:
+        flash(password_msg, "error")
+        return redirect(url_for("admin_dashboard"))
+
+    success, message = update_employee(
+        employee_id,
+        employee_name,
+        normalized_email,
+        work_area,
+        password_hash=password_hash,
+    )
     flash(message, "success" if success else "error")
 
     return redirect(url_for("admin_dashboard"))
@@ -1263,6 +1456,7 @@ def admin_batch_edit_employees():
         employee_name = _normalizar_texto(request.form.get(f"employee_name_{eid}", ""))
         employee_email = _normalizar_email(request.form.get(f"employee_email_{eid}", ""))
         work_area = _normalizar_texto(request.form.get(f"work_area_{eid}", "General"))
+        employee_password = request.form.get(f"employee_password_{eid}", "")
 
         if not _nombre_empleado_valido(employee_name):
             flash(f"El nombre '{employee_name}' es inválido. Evita repeticiones excesivas.", "error")
@@ -1276,7 +1470,21 @@ def admin_batch_edit_employees():
             flash(f"El correo para '{employee_name}' es inválido.", "error")
             return redirect(url_for("admin_dashboard"))
 
-        update_employee(eid, employee_name, normalized_email, work_area)
+        password_ok, password_msg, password_hash = _procesar_clave_empleado(employee_password)
+        if not password_ok:
+            flash(f"{employee_name}: {password_msg}", "error")
+            return redirect(url_for("admin_dashboard"))
+
+        success, message = update_employee(
+            eid,
+            employee_name,
+            normalized_email,
+            work_area,
+            password_hash=password_hash,
+        )
+        if not success:
+            flash(f"{employee_name}: {message}", "error")
+            return redirect(url_for("admin_dashboard"))
 
     flash("Empleados actualizados correctamente.", "success")
     return redirect(url_for("admin_dashboard"))

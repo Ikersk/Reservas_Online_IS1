@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Ingreso empleados{% endblock %}
+
+{% block content %}
+<section class="login-wrapper">
+    <div class="card small login-card">
+        <span class="login-badge">Portal de empleados</span>
+        <h2>Ingresa a tu agenda</h2>
+        <p>Accede con tu correo y contraseña para revisar tus próximas citas.</p>
+
+        <form action="{{ url_for('employee_login') }}" method="post" class="login-form">
+            <label>
+                Correo electrónico
+                <input type="email" name="email" maxlength="30" placeholder="tu-correo@dominio.com" autocomplete="username" required>
+            </label>
+
+            <label>
+                Contraseña
+                <input type="password" name="password" maxlength="{{ max_password_length }}" placeholder="••••••••" autocomplete="current-password" required>
+            </label>
+
+            <button type="submit" class="login-button">Ingresar a mi agenda</button>
+        </form>
+
+        <p class="login-help">Si no tienes credenciales, solicita acceso al administrador.</p>
+    </div>
+</section>
+{% endblock %}
