@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
+import os
 import re
 import csv
 import unicodedata
 from collections import Counter
 from io import StringIO
+from threading import Lock
 from urllib.parse import urlencode
 from werkzeug.security import check_password_hash, generate_password_hash
 try:
@@ -114,6 +116,32 @@ COLORES_ESTADO_EMPLEADO = {
     "completed": "#16a34a",
     "canceled": "#dc2626",
 }
+
+_runtime_bootstrapped = False
+_runtime_bootstrap_lock = Lock()
+
+
+def _scheduler_habilitado_en_entorno():
+    raw_value = (os.getenv("SCHEDULER_ENABLED", "1") or "1").strip().lower()
+    return raw_value not in {"0", "false", "no", "off"}
+
+
+def _bootstrap_runtime_services_once():
+    global _runtime_bootstrapped
+
+    if _runtime_bootstrapped:
+        return
+
+    with _runtime_bootstrap_lock:
+        if _runtime_bootstrapped:
+            return
+
+        init_db()
+
+        if _scheduler_habilitado_en_entorno():
+            start_scheduler()
+
+        _runtime_bootstrapped = True
 
 
 # Qué hace: verifica si hay sesión administrativa activa.
@@ -1783,7 +1811,11 @@ def rate_limit_exceeded(_error):
     return redirect(request.referrer or url_for("landing"))
 
 
+@app.before_request
+def ensure_runtime_services_ready():
+    _bootstrap_runtime_services_once()
+
+
 if __name__ == "__main__":
-    init_db()
-    start_scheduler()
+    _bootstrap_runtime_services_once()
     app.run(debug=True)
